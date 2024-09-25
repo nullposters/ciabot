@@ -14,14 +14,15 @@ require('dotenv').config();
 const secret = process.env.SECRET;
 const adminId = process.env.ADMIN_ID;
 const ciaBotId = process.env.CIABOT_ID;
+const errorChannelId = process.env.error_channel_id;
 
 let persistenceData = JSON.parse(fs.readFileSync('./persistence.json', 'utf8'));
 let redactionChance = persistenceData.redactionChance || 0.08;
 let chance = persistenceData.chance || 0.005;
 let triggerWords = persistenceData.triggerWords || [];
 let triggerWordChance = persistenceData.triggerWordChance || 0.1;
-
 const logger = createLogger('CIA Logger');
+logger.info(secret)
 
 client.login(secret);
 
@@ -34,10 +35,22 @@ client.on("messageCreate", async (message) => {
     const isCiaBot = message?.author?.id == ciaBotId;
     const hasBypassCharacter = message?.content?.startsWith(">>");
     if (isCiaBot || hasBypassCharacter) return;
+    if (message.attachments.size > 0) {
+        const hasImage = message.attachments.some(attachment => {
+            return attachment.contentType && attachment.contentType.startsWith('image/');
+        });
+        if (hasImage) return;
+    }
 
     const isCommand = message?.content?.startsWith('!') || false;
     if (isCommand) {
         handleCommand(message);
+        return;
+    }
+
+    const isCiaBroadcast = message?.content?.startsWith("$>") || false;
+    if (isCiaBroadcast) {
+        handleBroadcastFromCiaCommand(message, message?.content.split('').splice(2).join(''));
         return;
     }
 
@@ -46,7 +59,7 @@ client.on("messageCreate", async (message) => {
         words.some(word => word.toLowerCase() === triggerWord.toLowerCase())
     );
 
-    if (containsTriggerWord) await handleTriggerWord(message);
+    if (containsTriggerWord) await handleTriggerWord(message)
     else if (Math.random() < chance) await handleRandomChance(message)
 });
 
@@ -282,10 +295,9 @@ Available commands:
 \`!changeRedacted <value>\`: Chance using a decimal percentage value to replace a word in a message with \`[REDACTED]\`.
 \`!changeChance <value>\`: Chance using a decimal percentage value to trigger word replacements or redactions in a message. This is the overall chance the CIA bot has to change your message, the other value for redacted chance is used to determine how that message is changed.
 \`!changeTriggerWordChance <value>\`: Chance using a decimal percentage value to redact words that are considered 'trigger words'. If a trigger word is present in the message, this is the chance that word will be \`[REDACTED]\`
-\`!checkValues\`: Responds with the current chance configuration.
+\`!checkValues\`: Responds with the current configuration.
 \`!addTriggerWord <value>\`: Adds a new trigger word to the dictionary.
 \`!rmTriggerWord <value>\`: Removes a trigger word from the dictionary if present.
-\`!readjson\`: Reads and outputs data from the persistence JSON file.
 \`!help\`: Lists all available commands with their descriptions, along with some tips.
     `;
     message.channel.send(helpMessage);
@@ -306,3 +318,26 @@ function checkValues(message) {
         message.channel.send('Failed to read the JSON file.');
     }
 }
+
+async function sendErrorMessage(message) {
+    try {
+        const channel = await client.channels.fetch(errorChannelId);
+        if (channel) {
+            await channel.send(message);
+        } else {
+            logger.error('Error log channel not found or is not a text channel.');
+        }
+    } catch (error) {
+        logger.error('Failed to send error message:', error);
+    }
+}
+
+process.on('unhandledRejection', async (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    await sendErrorMessage(`Unhandled promise rejection:\n${reason}`)
+});
+
+process.on('uncaughtException', async (error) => {
+    console.error('Uncaught Exception thrown:', error);
+    await sendErrorMessage(`Unhandled exception\n${error}`);
+});
