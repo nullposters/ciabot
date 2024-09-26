@@ -4,7 +4,6 @@ import socket
 import random
 import logging
 import discord
-from io import BytesIO
 from dotenv import load_dotenv
 from discord import app_commands
 from collections.abc import Callable
@@ -92,9 +91,10 @@ class CiaBotClient(discord.Client):
     # Instead of specifying a guild to every command, we copy over our global commands instead.
     # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self):
-        # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=test_guild)
-        await self.tree.sync(guild=test_guild)
+        if test_guild:
+            # This copies the global commands over to your guild.
+            self.tree.copy_global_to(guild=test_guild)
+            await self.tree.sync(guild=test_guild)
 
 
 intents = discord.Intents.default()
