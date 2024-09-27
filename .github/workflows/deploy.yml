@@ -17,7 +17,7 @@ jobs:
       uses: docker/setup-buildx-action@v2
 
     - name: Build Docker image
-      run: docker build -t cia_bot_public:latest .
+      run: docker build -t ciabot-public:latest .
 
     - name: Add SSH key
       uses: webfactory/ssh-agent@v0.9.0
@@ -28,11 +28,11 @@ jobs:
       run: |
         # Stop existing container if running
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'docker stop cia_bot_public:latest || true && docker rm cia_bot_public:latest || true'
+        'docker stop cia-bot-public || true && docker rm cia-bot-public || true'
         
         # Pull latest image
-        scp -o StrictHostKeyChecking=no -r . ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/cia_bot_public:latest
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/ciabot-public:latest
 
         # Build and run the container on the droplet
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /cia_bot_public:latest && docker build -t cia_bot_public:latest . && docker run -d --name ciabot -p 80:80 cia_bot_public:latest'
+        'cd /ciabot-public:latest && docker build -t ciabot-public:latest . && docker run -d --name ciabot -p 80:80 ciabot-public:latest'
