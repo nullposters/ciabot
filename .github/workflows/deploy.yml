@@ -31,8 +31,8 @@ jobs:
         'docker stop cia-bot-public || true && docker rm cia-bot-public || true'
         
         # Pull latest image
-        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/ciabot-public/
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
 
         # Build and run the container on the droplet
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /ciabot-public && docker build -t cia_bot_public:latest . && docker run -d --name ciabot-public -p 80:80 cia_bot_public:latest'
+        'cd /root/ciabot-public && docker build -t cia_bot_public:latest . && docker run -d --name ciabot-public -p 80:80 cia_bot_public:latest'
