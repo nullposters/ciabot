@@ -57,6 +57,8 @@ def load_settings() -> dict[str, float | list[str]]:
                 settings['trigger_word_chance'] = 0.1
             if settings.get('bypass_prefix') is None:
                 settings['bypass_prefix'] = '>>'
+            if settings.get('channel_blacklist') is None:
+                settings['channel_blacklist'] = []
             return settings
     else:
         return {
@@ -64,7 +66,8 @@ def load_settings() -> dict[str, float | list[str]]:
             'selection_chance': 0.005,
             'trigger_words': [],
             'trigger_word_chance': 0.1,
-            'bypass_prefix': '>>'
+            'bypass_prefix': '>>',
+            'channel_blacklist': []
         }
 
 
@@ -109,8 +112,11 @@ def extract_message_metadata(message: discord.Message) -> tuple:
     message_author = message.author.name
     return message_id, message_author
 
+def is_channel_in_blacklist(channelId: int) -> bool:
+    return channelId in settings['channel_blacklist']
 
 def redact_message(message: discord.Message, trigger_word_indices: list[int]) -> str:
+    if is_channel_in_blacklist(message.channel.id): return
     message_id, message_author = extract_message_metadata(message)
     logging.info(f"Processing message {message_id=}, {message_author=}, {'has trigger word' if trigger_word_indices else 'randomly selected'}")
     message_content = message.content.split(' ')
@@ -170,6 +176,31 @@ async def change_bypass_prefix(interaction: discord.Interaction, new_prefix: str
     message = run_if_author_is_admin(interaction, logic, 'bypass_prefix')
     await interaction.response.send_message(message, ephemeral=True)
 
+@client.tree.command(
+    name="add-channel-to-blacklist",
+    description="Adds a specified channel to the blacklist"
+)
+@app_commands.describe(new_prefix='The channel ID (int) to add to the blacklist')
+async def add_channel_to_blacklist(interaction: discord.Interaction, channelId: int):
+    def logic():
+        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding channel {channelId} to channel blacklist")
+        settings['channel_blacklist'].append(channelId)
+        save_settings()
+    message = run_if_author_is_admin(interaction, logic, 'channel_blacklist')
+    await interaction.response.send_message(message, ephemeral=True)
+
+@client.tree.command(
+    name="remove-channel-from-blacklist",
+    description="Removes a specified channel to the blacklist"
+)
+@app_commands.describe(new_prefix='The channel ID (int) to remove from the blacklist')
+async def remove_channel_from_blacklist(interaction: discord.Interaction, channelId: int):
+    def logic():
+        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing channel {channelId} from channel blacklist")
+        settings['channel_blacklist'].remove(channelId)
+        save_settings()
+    message = run_if_author_is_admin(interaction, logic, 'channel_blacklist')
+    await interaction.response.send_message(message, ephemeral=True)
 
 @client.tree.command(
     name="change-selected-chance",
@@ -272,6 +303,8 @@ Available commands:
 `/change-redacted-chance <value>`: Chance (in percentage) to replace a word in a message with `[REDACTED]`. If no word is replaced, one word will be chosen randomly and replaced.
 `/change-trigger-word-chance <value>`: Chance (in percentage) to redact words that are considered 'trigger words'. If a trigger word is present in the message, this is the chance that any given word will be `[REDACTED]`. If no word is replaced, one trigger word will be chosen randomly and replaced.
 `/show-values`: Responds with the current configuration.
+`/add-channel-to-blacklist <value>`: Adds a channel ID to the channel blacklist
+`/remove-channel-from-blacklist <value>`: Removes a channel ID from the channel blacklist
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
