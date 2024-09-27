@@ -20,7 +20,7 @@ jobs:
       run: docker build -t cia_bot_public .
 
     - name: Add SSH key
-      uses: webfactory/ssh-agent@v0.8.1
+      uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.DO_SSH_KEY }}
 
