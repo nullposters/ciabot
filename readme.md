@@ -1,6 +1,6 @@
 # CIABot
 
-This is a dockerized Python project that uses the Discord.py library to run the glowiest bot in all of Discord. It'll randomly redact your messages ~~and prop up based puppet dictators in South American countries~~. 
+This is a dockerized Python project that uses the Discord.py library to run the glowiest bot in all of Discord. It'll randomly redact your messages ~~and prop up based puppet dictators in South American countries~~.
 
 ## Initial configuration
 
