@@ -35,4 +35,4 @@ jobs:
 
         # Build and run the container on the droplet
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /root/ciabot-public && docker build -t cia_bot_public:latest . && docker run -d --name ciabot-public -p 80:80 cia_bot_public:latest'
+        'cd /root/ciabot-public && docker build -t cia_bot_public:latest . && docker run -d --name ciabot-public -p 81:3001 cia_bot_public:latest'
