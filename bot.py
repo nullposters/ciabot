@@ -303,6 +303,8 @@ Available commands:
 `/change-redacted-chance <value>`: Chance (in percentage) to replace a word in a message with `[REDACTED]`. If no word is replaced, one word will be chosen randomly and replaced.
 `/change-trigger-word-chance <value>`: Chance (in percentage) to redact words that are considered 'trigger words'. If a trigger word is present in the message, this is the chance that any given word will be `[REDACTED]`. If no word is replaced, one trigger word will be chosen randomly and replaced.
 `/show-values`: Responds with the current configuration.
+`/add-channel-to-blacklist <value>`: Adds a channel ID to the channel blacklist
+`/remove-channel-from-blacklist <value>`: Removes a channel ID from the channel blacklist
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
