@@ -28,7 +28,7 @@ jobs:
       run: |
         # Stop existing container if running
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'docker stop docker stop ciabot-public || true && docker rm docker stop ciabot-public || true'
+        'docker stop ciabot-public || true && docker rm ciabot-public || true'
         
         # Pull latest image
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
