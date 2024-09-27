@@ -293,7 +293,7 @@ async def on_message(message: discord.Message):
     if trigger_word_indices or random.random() < settings['redaction_chance']:
         redacted_message = redact_message(message, trigger_word_indices)
         try:
-            username = message.author.name
+            username = message.author.display_name
             await message.delete()
             await message.channel.send(f"{username}:\n{redacted_message}")
         except Exception as e:
