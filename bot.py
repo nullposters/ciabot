@@ -151,6 +151,12 @@ def run_if_author_is_admin(interaction: discord.Interaction, function: Callable[
         return "You don't have permission to do that"
 
 
+def change_config_value(interaction: discord.Interaction, config_key: str, new_value: float) -> None:
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing config value {config_key} to {new_value}")
+    settings[config_key] = new_value/100.0
+    save_settings()
+
+
 @client.tree.command(
     name="change-bypass-prefix",
     description="Changes the prefix that allows bypassing the bot"
@@ -165,19 +171,13 @@ async def change_bypass_prefix(interaction: discord.Interaction, new_prefix: str
     await interaction.response.send_message(message, ephemeral=True)
 
 
-def change_config_value(config_key: str, new_value: float) -> None:
-    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing config value {config_key} to {new_value}")
-    settings[config_key] = new_value/100.0
-    save_settings()
-
-
 @client.tree.command(
     name="change-selected-chance",
     description="Changes the chance to select any random message for redaction"
 )
-@app_commands.describe(new_chance='The new threshold of the selection check that will be applied to all messages for possible redaction. Goes from 0% to 100%.')
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the selection check that will be applied to all messages for possible redaction.')
 async def change_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    message = run_if_author_is_admin(interaction, lambda: change_config_value('selection_chance', new_chance), 'selection_chance')
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'selection_chance', new_chance), 'selection_chance')
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -185,9 +185,9 @@ async def change_chance(interaction: discord.Interaction, new_chance: app_comman
     name="change-redacted-chance",
     description="Changes the chance to redact any random word in a selected message"
 )
-@app_commands.describe(new_chance='The new threshold of the redaction check that will be applied to all the words in a selected message. Goes from 0% to 100%. If all words pass the check, one random word will be redacted.')
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the words in a selected message. If all words pass the check, one random word will be redacted.')
 async def change_redacted(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    message = run_if_author_is_admin(interaction, lambda: change_config_value('redaction_chance', new_chance), 'redaction_chance')
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'redaction_chance', new_chance), 'redaction_chance')
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -195,9 +195,10 @@ async def change_redacted(interaction: discord.Interaction, new_chance: app_comm
     name="change-trigger-word-chance",
     description="Changes the chance to redact a trigger word"
 )
-@app_commands.describe(new_chance='The new threshold of the redaction check that will be applied to all the trigger words of any message. Goes from 0% to 100%. If all words pass the check, one random trigger word will be redacted.')
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the trigger words of any message. If all words pass the check, one random trigger word will be redacted.')
 async def change_trigger_word_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    message = run_if_author_is_admin(interaction, lambda: change_config_value('trigger_word_chance', new_chance), 'trigger_word_chance')
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing trigger word chance to {new_chance}")
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'trigger_word_chance', new_chance), 'trigger_word_chance')
     await interaction.response.send_message(message, ephemeral=True)
 
 
