@@ -331,11 +331,6 @@ Available commands:
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
 
 
-@client.event
-async def on_ready():
-    logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
-
-
 async def run_message_redaction(message: discord.Message):
     """Redacts messages if they meet the criteria"""
     has_bypass_character = message.content.startswith(settings['bypass_prefix'])
@@ -362,6 +357,11 @@ async def run_reactions(message: discord.Message):
             await react_with_funny_letters(message, JSBAD)
         except Exception as e:
             logging.error(f"Error while reacting to message: {e}")
+
+
+@client.event
+async def on_ready():
+    logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
 @client.event
