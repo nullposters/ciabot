@@ -335,6 +335,7 @@ async def on_ready():
 
 
 async def run_message_redaction(message: discord.Message):
+    """Redacts messages if they meet the criteria"""
     has_bypass_character = message.content.startswith(settings['bypass_prefix'])
     has_image = len(message.attachments) > 0 and any('image' in attachment.content_type for attachment in message.attachments)
     is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
@@ -353,6 +354,7 @@ async def run_message_redaction(message: discord.Message):
 
 
 async def run_reactions(message: discord.Message):
+    """Reacts to messages if they meet the criteria"""
     if "js" in message.content.lower():
         try:
             await react_with_funny_letters(message, JSBAD)
