@@ -24,7 +24,9 @@ class ContextFilter(logging.Filter):
         record.hostname = ContextFilter.hostname
         return True
     
-syslogaddress = (os.getenv('PAPERTRAIL_LOG_DESTINATION', 'localhost'), int(os.getenv('PAPERTRAIL_LOG_PORT', 514))) # If the log destination is set up, use it. Otherwise, default to localhost:514
+syslog_url = os.getenv('PAPERTRAIL_LOG_DESTINATION', os.getenv('LOG_DESTINATION', 'localhost')) # Backwards compatible with the original papertrail setup
+syslog_port = int(os.getenv('PAPERTRAIL_LOG_PORT', os.getenv('LOG_PORT', 514))) # Backwards compatible with the original papertrail setup
+syslogaddress = (syslog_url, syslog_port)
 syslog = SysLogHandler(address=syslogaddress, facility=SysLogHandler.LOG_USER)
 syslog.addFilter(ContextFilter())
 format = '%(asctime)s %(hostname)s cia_bot: %(message)s'
@@ -36,7 +38,7 @@ logger.setLevel(logging.INFO)
 # End logging initialization
 
 
-token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN'))
+token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compatible with the original token name
 admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
