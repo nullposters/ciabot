@@ -366,11 +366,10 @@ async def run_reactions(message: discord.Message):
 
 @client.event
 async def on_message(message: discord.Message):
-    is_self = message.author.id == client.user.id
-    if is_self: # All messages sent by the bot are ignored
+    if message.author.bot: # All messages sent by any bot are ignored
         return
-    await run_message_redaction(message)
     await run_reactions(message)
+    await run_message_redaction(message) # Run last, as it may delete the message
 
 
 client.run(token)
