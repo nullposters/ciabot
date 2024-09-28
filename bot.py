@@ -2,12 +2,14 @@ import os
 import json
 import socket
 import random
+import string
 import logging
 import discord
 from dotenv import load_dotenv
 from discord import app_commands
 from collections.abc import Callable
 from logging.handlers import SysLogHandler
+from unicodedata import lookup
 
 
 load_dotenv()
@@ -76,7 +78,7 @@ save_settings()
 
 
 REDACTED = "`[REDACTED]`"
-
+JSBAD = "bad"
 
 class CiaBotClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -161,6 +163,14 @@ def change_config_value(interaction: discord.Interaction, config_key: str, new_v
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing config value {config_key} to {new_value}")
     settings[config_key] = new_value/100.0
     save_settings()
+
+
+async def react_with_funny_letters(message: discord.Message, text: string):
+    upper_text = text.upper()
+    if any(c not in set(string.ascii_uppercase) for c in upper_text):
+        return
+    for char in upper_text:
+        await message.add_reaction(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {char}'))
 
 
 @client.tree.command(
@@ -331,6 +341,11 @@ async def on_message(message: discord.Message):
             await message.channel.send(f"{username}:\n{redacted_message}")
         except Exception as e:
             logging.error(f"Error redacting message: {e}")
-                    
+    if "js" in message.content.lower():
+        try:
+            await react_with_funny_letters(message, JSBAD)
+        except Exception as e:
+            logging.error(f"Error while reacting to message: {e}")
+
 
 client.run(token)
