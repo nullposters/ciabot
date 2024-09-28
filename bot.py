@@ -5,11 +5,12 @@ import random
 import string
 import logging
 import discord
+from typing import Any
 from dotenv import load_dotenv
+from unicodedata import lookup
 from discord import app_commands
 from collections.abc import Callable
 from logging.handlers import SysLogHandler
-from unicodedata import lookup
 
 
 load_dotenv()
@@ -114,11 +115,8 @@ def extract_message_metadata(message: discord.Message) -> tuple:
     message_author = message.author.name
     return message_id, message_author
 
-def is_channel_in_blacklist(channelId: int) -> bool:
-    return channelId in settings['channel_blacklist']
 
 def redact_message(message: discord.Message, trigger_word_indices: list[int]) -> str:
-    if is_channel_in_blacklist(message.channel.id): return
     message_id, message_author = extract_message_metadata(message)
     logging.info(f"Processing message {message_id=}, {message_author=}, {'has trigger word' if trigger_word_indices else 'randomly selected'}")
     message_content = message.content.split(' ')
@@ -159,9 +157,9 @@ def run_if_author_is_admin(interaction: discord.Interaction, function: Callable[
         return "You don't have permission to do that"
 
 
-def change_config_value(interaction: discord.Interaction, config_key: str, new_value: float) -> None:
+def change_config_value(interaction: discord.Interaction, config_key: str, new_value: Any) -> None:
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing config value {config_key} to {new_value}")
-    settings[config_key] = new_value/100.0
+    settings[config_key] = new_value
     save_settings()
 
 
@@ -173,74 +171,17 @@ async def react_with_funny_letters(message: discord.Message, text: string):
         await message.add_reaction(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {char}'))
 
 
-@client.tree.command(
-    name="change-bypass-prefix",
-    description="Changes the prefix that allows bypassing the bot"
-)
-@app_commands.describe(new_prefix='The new prefix to bypass the bot')
-async def change_bypass_prefix(interaction: discord.Interaction, new_prefix: str):
-    def logic():
-        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing bypass prefix to {new_prefix}")
-        settings['bypass_prefix'] = new_prefix
-        save_settings()
-    message = run_if_author_is_admin(interaction, logic, 'bypass_prefix')
-    await interaction.response.send_message(message, ephemeral=True)
-
-@client.tree.command(
-    name="add-channel-to-blacklist",
-    description="Adds a specified channel to the blacklist"
-)
-@app_commands.describe(new_prefix='The channel ID (int) to add to the blacklist')
-async def add_channel_to_blacklist(interaction: discord.Interaction, channelId: int):
-    def logic():
-        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding channel {channelId} to channel blacklist")
-        settings['channel_blacklist'].append(channelId)
-        save_settings()
-    message = run_if_author_is_admin(interaction, logic, 'channel_blacklist')
-    await interaction.response.send_message(message, ephemeral=True)
-
-@client.tree.command(
-    name="remove-channel-from-blacklist",
-    description="Removes a specified channel to the blacklist"
-)
-@app_commands.describe(new_prefix='The channel ID (int) to remove from the blacklist')
-async def remove_channel_from_blacklist(interaction: discord.Interaction, channelId: int):
-    def logic():
-        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing channel {channelId} from channel blacklist")
-        settings['channel_blacklist'].remove(channelId)
-        save_settings()
-    message = run_if_author_is_admin(interaction, logic, 'channel_blacklist')
-    await interaction.response.send_message(message, ephemeral=True)
-
-@client.tree.command(
-    name="change-selected-chance",
-    description="Changes the chance to select any random message for redaction"
-)
-@app_commands.describe(new_chance='From 0 to 100, the new threshold of the selection check that will be applied to all messages for possible redaction.')
-async def change_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'selection_chance', new_chance), 'selection_chance')
-    await interaction.response.send_message(message, ephemeral=True)
+def add_elements_to_list(interaction: discord.Interaction, config_key: str, new_elements: list[Any]) -> None:
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding elements {new_elements} to {config_key}")
+    settings[config_key].extend(new_elements)
+    save_settings()
 
 
-@client.tree.command(
-    name="change-redacted-chance",
-    description="Changes the chance to redact any random word in a selected message"
-)
-@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the words in a selected message. If all words pass the check, one random word will be redacted.')
-async def change_redacted(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'redaction_chance', new_chance), 'redaction_chance')
-    await interaction.response.send_message(message, ephemeral=True)
-
-
-@client.tree.command(
-    name="change-trigger-word-chance",
-    description="Changes the chance to redact a trigger word"
-)
-@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the trigger words of any message. If all words pass the check, one random trigger word will be redacted.')
-async def change_trigger_word_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0, 100]):
-    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing trigger word chance to {new_chance}")
-    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'trigger_word_chance', new_chance), 'trigger_word_chance')
-    await interaction.response.send_message(message, ephemeral=True)
+def remove_elements_from_list(interaction: discord.Interaction, config_key: str, old_elements: list[Any]) -> None:
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {old_elements} from {config_key}")
+    for element in old_elements:
+        settings[config_key].remove(element)
+    save_settings()
 
 
 @client.tree.command(
@@ -270,16 +211,72 @@ async def read_json(interaction: discord.Interaction):
 
 
 @client.tree.command(
+    name="change-bypass-prefix",
+    description="Changes the prefix that allows bypassing the bot"
+)
+@app_commands.describe(new_prefix='The new prefix to bypass the bot')
+async def change_bypass_prefix(interaction: discord.Interaction, new_prefix: str):    
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'bypass_prefix', new_prefix), 'bypass_prefix')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
+    name="change-selected-chance",
+    description="Changes the chance to select any random message for redaction"
+)
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the selection check that will be applied to all messages for possible redaction.')
+async def change_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0.0, 100.0]):
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'selection_chance', new_chance/100.0), 'selection_chance')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
+    name="change-redacted-chance",
+    description="Changes the chance to redact any random word in a selected message"
+)
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the words in a selected message. If all words pass the check, one random word will be redacted.')
+async def change_redacted(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0.0, 100.0]):
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'redaction_chance', new_chance/100.0), 'redaction_chance')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
+    name="change-trigger-word-chance",
+    description="Changes the chance to redact a trigger word"
+)
+@app_commands.describe(new_chance='From 0 to 100, the new threshold of the redaction check that will be applied to all the trigger words of any message. If all words pass the check, one random trigger word will be redacted.')
+async def change_trigger_word_chance(interaction: discord.Interaction, new_chance: app_commands.Range[float, 0.0, 100.0]):
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'trigger_word_chance', new_chance/100.0), 'trigger_word_chance')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
+    name="add-channel-to-blacklist",
+    description="Adds a specified channel to the blacklist"
+)
+@app_commands.describe(new_channel_ids='The channel ID to add to the blacklist. Multiple channels can be added by separating them with a comma.')
+async def add_channel_to_blacklist(interaction: discord.Interaction, new_channel_ids: str):
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_list(interaction, 'channel_blacklist', [channel_id.strip() for channel_id in new_channel_ids.split(',')]), 'channel_blacklist')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
+    name="remove-channel-from-blacklist",
+    description="Removes a specified channel to the blacklist"
+)
+@app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a comma.')
+async def remove_channel_from_blacklist(interaction: discord.Interaction, old_channel_ids: str):
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_list(interaction, 'channel_blacklist', [channel_id.strip() for channel_id in old_channel_ids.split(',')]), 'channel_blacklist')
+    await interaction.response.send_message(message, ephemeral=True)
+
+
+@client.tree.command(
     name="add-trigger-word",
     description="Adds a trigger word to the list of words that trigger the bot"
 )
-@app_commands.describe(new_trigger_word='The new trigger word to add to the list')
-async def add_trigger_word(interaction: discord.Interaction, new_trigger_word: str):
-    def logic():
-        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding trigger word {new_trigger_word}")
-        settings['trigger_words'].append(new_trigger_word.lower())
-        save_settings()
-    message = run_if_author_is_admin(interaction, logic, 'trigger_words', new_trigger_word)
+@app_commands.describe(new_trigger_words='The new trigger word to add to the list. Multiple trigger words can be added by separating them with a comma.')
+async def add_trigger_word(interaction: discord.Interaction, new_trigger_words: str):
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_list(interaction, 'trigger_words', [word.strip() for word in new_trigger_words.split(',')]), 'trigger_words', new_trigger_word)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -287,13 +284,9 @@ async def add_trigger_word(interaction: discord.Interaction, new_trigger_word: s
     name="remove-trigger-word",
     description="Removes a trigger word from the list of words that trigger the bot"
 )
-@app_commands.describe(old_trigger_word='The trigger word to remove from the list')
-async def remove_trigger_word(interaction: discord.Interaction, old_trigger_word: str):
-    def logic():
-        logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing trigger word {old_trigger_word}")
-        settings['trigger_words'].remove(old_trigger_word.lower())
-        save_settings()
-    message = run_if_author_is_admin(interaction, logic, 'trigger_words', old_trigger_word)
+@app_commands.describe(old_trigger_words='The trigger word to remove from the list. Multiple trigger words can be removed by separating them with a comma.')
+async def remove_trigger_word(interaction: discord.Interaction, old_trigger_words: str):
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_list(interaction, 'trigger_words', [word.strip() for word in old_trigger_words.split(',')]), 'trigger_words', old_trigger_word)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -330,7 +323,8 @@ async def on_message(message: discord.Message):
     is_self = message.author.id == client.user.id
     has_bypass_character = message.content.startswith(settings['bypass_prefix'])
     has_image = len(message.attachments) > 0 and any('image' in attachment.content_type for attachment in message.attachments)
-    if is_self or has_bypass_character or has_image:
+    is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
+    if is_self or has_bypass_character or has_image or is_channel_in_blacklist:
         return
     trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
     if trigger_word_indices or random.random() < settings['redaction_chance']:
