@@ -6,6 +6,7 @@ import string
 import logging
 import discord
 from typing import Any
+from datetime import datetime
 from dotenv import load_dotenv
 from unicodedata import lookup
 from discord import app_commands
@@ -23,8 +24,8 @@ class ContextFilter(logging.Filter):
         record.hostname = ContextFilter.hostname
         return True
     
-
-syslog = SysLogHandler(address=(os.getenv('PAPERTRAIL_LOG_DESTINATION'), int(os.getenv('PAPERTRAIL_LOG_PORT'))), facility=SysLogHandler.LOG_USER)
+syslogaddress = (os.getenv('PAPERTRAIL_LOG_DESTINATION', 'localhost'), int(os.getenv('PAPERTRAIL_LOG_PORT', 514))) # If the log destination is set up, use it. Otherwise, default to localhost:514
+syslog = SysLogHandler(address=syslogaddress, facility=SysLogHandler.LOG_USER)
 syslog.addFilter(ContextFilter())
 format = '%(asctime)s %(hostname)s cia_bot: %(message)s'
 formatter = logging.Formatter(format, datefmt='%b %d %H:%M:%S')
@@ -42,36 +43,31 @@ test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
 
 
 def save_settings() -> None:
+    """Saves the current settings to the settings.json file"""
     with open(settings_path, 'w', encoding='utf-8') as f:
         json.dump(settings, f, indent=4)
 
 
 def load_settings() -> dict[str, float | list[str]]:
+    """Loads the settings from the settings.json file"""
+    default_settings = {
+        'redaction_chance': 0.08,
+        'selection_chance': 0.005,
+        'trigger_words': [],
+        'trigger_word_chance': 0.1,
+        'bypass_prefix': '>>',
+        'channel_blacklist': [],
+        'timeout_expiration': 0,
+    }
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
             settings = json.load(f)
-            if settings.get('redaction_chance') is None:
-                settings['redaction_chance'] = 0.08
-            if settings.get('selection_chance') is None:
-                settings['selection_chance'] = 0.005
-            if settings.get('trigger_words') is None:
-                settings['trigger_words'] = []
-            if settings.get('trigger_word_chance') is None:
-                settings['trigger_word_chance'] = 0.1
-            if settings.get('bypass_prefix') is None:
-                settings['bypass_prefix'] = '>>'
-            if settings.get('channel_blacklist') is None:
-                settings['channel_blacklist'] = []
+            for key in default_settings.keys():
+                if key not in settings:
+                    settings[key] = default_settings[key]
             return settings
     else:
-        return {
-            'redaction_chance': 0.08,
-            'selection_chance': 0.005,
-            'trigger_words': [],
-            'trigger_word_chance': 0.1,
-            'bypass_prefix': '>>',
-            'channel_blacklist': []
-        }
+        return default_settings
 
 
 settings = load_settings()
@@ -80,6 +76,7 @@ save_settings()
 
 REDACTED = "`[REDACTED]`"
 JSBAD = "bad"
+
 
 class CiaBotClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -111,12 +108,14 @@ client = CiaBotClient(intents=intents)
 
 
 def extract_message_metadata(message: discord.Message) -> tuple:
+    """Extracts the message ID and author name from a discord.Message object"""
     message_id = message.id
     message_author = message.author.name
     return message_id, message_author
 
 
 def redact_message(message: discord.Message, trigger_word_indices: list[int]) -> str:
+    """Redacts a given message. If the message contains trigger words, redacts any word at random from the trigger words. Otherwise, redacts any random word from the message."""
     message_id, message_author = extract_message_metadata(message)
     logging.info(f"Processing message {message_id=}, {message_author=}, {'has trigger word' if trigger_word_indices else 'randomly selected'}")
     message_content = message.content.split(' ')
@@ -134,6 +133,7 @@ def redact_message(message: discord.Message, trigger_word_indices: list[int]) ->
 
 
 def check_if_author_is_admin(interaction: discord.Interaction) -> bool:
+    """Checks if the user is an admin or mod"""
     is_mod = any("mod" in role.name or "Mod" in role.name for role in interaction.user.roles)
     can_manage_messages = interaction.user.top_role.permissions.manage_messages
     is_admin = interaction.user.top_role.permissions.administrator
@@ -142,6 +142,7 @@ def check_if_author_is_admin(interaction: discord.Interaction) -> bool:
 
 
 def run_if_author_is_admin(interaction: discord.Interaction, function: Callable[[str, float], None], param_name: str, element: str = None) -> str:
+    """Runs a function if the user is an admin or mod"""
     if check_if_author_is_admin(interaction):
         try:
             function()
@@ -158,30 +159,50 @@ def run_if_author_is_admin(interaction: discord.Interaction, function: Callable[
 
 
 def change_config_value(interaction: discord.Interaction, config_key: str, new_value: Any) -> None:
+    """Changes a configuration value in the settings dictionary"""
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Changing config value {config_key} to {new_value}")
     settings[config_key] = new_value
     save_settings()
 
 
-async def react_with_funny_letters(message: discord.Message, text: string):
-    upper_text = text.upper()
-    if any(c not in set(string.ascii_uppercase) for c in upper_text):
-        return
-    for char in upper_text:
-        await message.add_reaction(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {char}'))
-
-
 def add_elements_to_list(interaction: discord.Interaction, config_key: str, new_elements: list[Any]) -> None:
+    """Adds one or more elements to a list in the settings dictionary. The elements must be wrapped in a list, even if there is only one element."""
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding elements {new_elements} to {config_key}")
     settings[config_key].extend(new_elements)
     save_settings()
 
 
 def remove_elements_from_list(interaction: discord.Interaction, config_key: str, old_elements: list[Any]) -> None:
+    """Removes one or more elements from a list in the settings dictionary. The elements must be wrapped in a list, even if there is only one element."""
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {old_elements} from {config_key}")
     for element in old_elements:
         settings[config_key].remove(element)
     save_settings()
+
+
+async def react_with_funny_letters(message: discord.Message, text: string):
+    """Reacts to a message with single-letter emojis. The string to emulate is deduplicated before reacting."""
+    upper_text = text.upper()
+    letter_set = set(upper_text)
+    if any(c not in set(string.ascii_uppercase) for c in letter_set):
+        return
+    for char in upper_text:
+        await message.add_reaction(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {char}'))
+
+
+@client.tree.command(
+    name="bot-timeout",
+    description="Stops the bot from redacting messages for a while, between 5 minutes and 6 hours"
+)
+@app_commands.describe(duration='The duration in minutes to stop redacting messages, between 5 and 360')
+async def bot_timeout(interaction: discord.Interaction, duration: app_commands.Range[int, 5, 360]):
+    if settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']:
+        await interaction.response.send_message("The bot is already in timeout.", ephemeral=True)
+        return
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Timeout for {duration*60} seconds")
+    settings['timeout_expiration'] = datetime.now().timestamp() + (duration*60)
+    save_settings()
+    await interaction.response.send_message(f"Timed out for {duration} minutes")
 
 
 @client.tree.command(
@@ -190,12 +211,7 @@ def remove_elements_from_list(interaction: discord.Interaction, config_key: str,
 )
 async def show_values(interaction: discord.Interaction):
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Showing configuration values")
-    redaction_chance = settings['redaction_chance']
-    chance = settings['selection_chance']
-    trigger_word_chance = settings['trigger_word_chance']
-    trigger_words = settings['trigger_words']
-    bypass_prefix = settings['bypass_prefix']
-    await interaction.response.send_message(f"Selection chance: {chance:.2%}\nRedaction chance: {redaction_chance:.2%}\nTrigger word chance: {trigger_word_chance:.2%}\nBypass prefix: `{bypass_prefix}`\nTrigger words: {', '.join(trigger_words)}", ephemeral=True)
+    await interaction.response.send_message(f"```json\n{json.dumps(settings, indent=2)}\n```", ephemeral=True)
 
 
 @client.tree.command(
@@ -318,13 +334,12 @@ async def on_ready():
     logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
-@client.event
-async def on_message(message: discord.Message):
-    is_self = message.author.id == client.user.id
+async def run_message_redaction(message: discord.Message):
     has_bypass_character = message.content.startswith(settings['bypass_prefix'])
     has_image = len(message.attachments) > 0 and any('image' in attachment.content_type for attachment in message.attachments)
     is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
-    if is_self or has_bypass_character or has_image or is_channel_in_blacklist:
+    is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
+    if has_bypass_character or has_image or is_channel_in_blacklist or is_timed_out:
         return
     trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
     if trigger_word_indices or random.random() < settings['redaction_chance']:
@@ -335,11 +350,23 @@ async def on_message(message: discord.Message):
             await message.channel.send(f"{username}:\n{redacted_message}")
         except Exception as e:
             logging.error(f"Error redacting message: {e}")
+
+
+async def run_reactions(message: discord.Message):
     if "js" in message.content.lower():
         try:
             await react_with_funny_letters(message, JSBAD)
         except Exception as e:
             logging.error(f"Error while reacting to message: {e}")
+
+
+@client.event
+async def on_message(message: discord.Message):
+    is_self = message.author.id == client.user.id
+    if is_self: # All messages sent by the bot are ignored
+        return
+    await run_message_redaction(message)
+    await run_reactions(message)
 
 
 client.run(token)
