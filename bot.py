@@ -214,7 +214,7 @@ async def bot_timeout(interaction: discord.Interaction, duration: app_commands.R
 )
 async def show_values(interaction: discord.Interaction):
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Showing configuration values")
-    await interaction.response.send_message(f"```json\n{jsonpickle.decode(settings, indent=2)}\n```", ephemeral=True)
+    await interaction.response.send_message(f"```json\n{jsonpickle.encode(settings, indent=2)}\n```", ephemeral=True)
 
 
 @client.tree.command(
