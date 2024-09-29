@@ -64,11 +64,9 @@ def load_settings() -> dict[str, float | set[str]]:
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
             settings = jsonpickle.decode(f.read())
-            for key, value in default_settings.items():
+            for key, _ in default_settings.items():
                 if key not in settings:
                     settings[key] = default_settings[key]
-                if isinstance(value, list):
-                    settings[key] = set(settings[key])
             return settings
     else:
         return default_settings
@@ -171,14 +169,14 @@ def change_config_value(interaction: discord.Interaction, config_key: str, new_v
 
 def add_elements_to_set(interaction: discord.Interaction, config_key: str, new_elements: set[Any]) -> None:
     """Adds one or more elements to a set in the settings dictionary. The elements must be wrapped in a set, even if there is only one element."""
-    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding elements {[new_elements]} to {config_key}")
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding elements {new_elements} to {config_key}")
     settings[config_key].update(new_elements)
     save_settings()
 
 
 def remove_elements_from_set(interaction: discord.Interaction, config_key: str, old_elements: set[Any]) -> None:
     """Removes one or more elements from a set in the settings dictionary. The elements must be wrapped in a set, even if there is only one element."""
-    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {[old_elements]} from {config_key}")
+    logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {old_elements} from {config_key}")
     settings[config_key].difference_update(old_elements)
     save_settings()
 
