@@ -76,7 +76,20 @@ settings = load_settings()
 save_settings()
 
 
-REDACTED = "`[REDACTED]`"
+REDACTION = [
+    "`[REDACTED]`",
+    "`[EXPUNGED]`",
+    "`[CLASSIFIED]`",
+    "`[REDACTED BY CIA]`",
+    "`[REDACTED BY FBI]`",
+    "`[REDACTED BY NSA]`",
+    "`[REDACTED BY DHS]`",
+    "`[REDACTED BY MI6]`",
+    "`[REDACTED BY KGB]`",
+    "`********`",
+    "`████████"
+]
+
 JSBAD = "bad"
 
 
@@ -126,11 +139,11 @@ def redact_message(message: discord.Message, trigger_word_indices: list[int]) ->
     threshold = settings['trigger_word_chance'] if trigger_word_indices else settings['redaction_chance']
     for idx in indices:
         if random.random() < threshold:
-            message_content[idx] = REDACTED
+            message_content[idx] = random.choice(REDACTION)
             was_redacted = True
     if not was_redacted:
         random_index = random.choice(indices)
-        message_content[random_index] = REDACTED
+        message_content[random_index] = random.choice(REDACTION)
     return ' '.join(message_content)
 
 
