@@ -30,6 +30,9 @@ jobs:
     - name: Ensure we are in the repository root
       run: cd $GITHUB_WORKSPACE && ls -la
 
+    - name: Checkout Dev
+      run: git checkout dev
+
     - name: Build Docker image
       run: docker-compose build
 
