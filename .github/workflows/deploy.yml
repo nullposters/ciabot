@@ -3,7 +3,7 @@ name: Deploy to DigitalOcean Droplet
 on:
   push:
     branches:
-      - '*'
+      - dev
 
 jobs:
   deploy:
@@ -13,6 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Verify current directory
+      run: pwd
+
+    - name: List files in current directory
+      run: ls -la
+
     - name: Set up Docker
       uses: docker/setup-buildx-action@v2
 
@@ -20,6 +26,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y docker-compose
+
+    - name: Ensure we are in the repository root
+      run: cd $GITHUB_WORKSPACE && ls -la
 
     - name: Build Docker image
       run: docker-compose build
@@ -29,20 +38,15 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.DO_SSH_KEY }}
 
-    - name: List files in root directory
-      run: ls -la
-      
     - name: Deploy to DigitalOcean Droplet
       run: |
         # Stop existing container if running
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'docker-compose down || true'
-
-        # Deploy the new version
+        
+        # Deploy the new version (scp will copy the whole project to your droplet)
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
 
-    
-
-        # Build and run Docker Compose on the droplet, passing environment variables
+        # Build and run Docker Compose on the droplet
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /root/ciabot-public && export POSTGRES_DB=${{ secrets.POSTGRES_DB }} POSTGRES_USER=${{ secrets.POSTGRES_USER }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} && docker-compose up -d --build'
+        'cd /root/ciabot-public && docker-compose up -d --build'
