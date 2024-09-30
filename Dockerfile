@@ -10,6 +10,9 @@ COPY requirements.txt ./
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install psycopg2 for PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev gcc && pip install psycopg2
+
 # Copy the rest of the application code
 COPY . .
 

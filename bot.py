@@ -205,7 +205,6 @@ async def bot_timeout(interaction: discord.Interaction, duration: app_commands.R
     save_settings()
     await interaction.response.send_message(f"Timed out for {duration} minutes")
 
-
 @client.tree.command(
     name="show-values",
     description="Shows the current configuration values"
