@@ -30,9 +30,6 @@ jobs:
     - name: Ensure we are in the repository root
       run: cd $GITHUB_WORKSPACE && ls -la
 
-    - name: Checkout Dev
-      run: git checkout dev
-
     - name: Build Docker image
       run: docker-compose build
 
@@ -47,6 +44,10 @@ jobs:
         'docker-compose down || true'
 
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
+
+        ssh ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
+        cd /root/ciabot-public/ \
+        ls -la
 
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'cd /root/ciabot-public && docker-compose up -d --build'
