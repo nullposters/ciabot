@@ -28,7 +28,7 @@ jobs:
         echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
 
     - name: Build Docker image
-      run: docker-compose build
+      run: docker compose build
 
     - name: Add SSH key
       uses: webfactory/ssh-agent@v0.9.0
@@ -38,9 +38,9 @@ jobs:
     - name: Deploy to DigitalOcean Droplet
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'docker-compose down || true'
+        'docker compose down || true'
 
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
 
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /root/ciabot-public && docker-compose up -d --build'
+        'cd /root/ciabot-public && docker compose up -d --build'
