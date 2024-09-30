@@ -3,7 +3,7 @@ name: Deploy to DigitalOcean Droplet
 on:
   push:
     branches:
-      - dev
+      - '*'
 
 jobs:
   deploy:
@@ -29,6 +29,9 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.DO_SSH_KEY }}
 
+    - name: List files in root directory
+      run: ls -la
+      
     - name: Deploy to DigitalOcean Droplet
       run: |
         # Stop existing container if running
@@ -37,6 +40,8 @@ jobs:
 
         # Deploy the new version
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
+
+    
 
         # Build and run Docker Compose on the droplet, passing environment variables
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
