@@ -21,11 +21,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y docker-compose
 
-        - name: Export environment variables
-        run: |
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+    - name: Export environment variables
+      run: |
+        echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+        echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
 
     - name: Build Docker image
       run: docker-compose build
