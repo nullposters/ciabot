@@ -40,13 +40,10 @@ jobs:
 
     - name: Deploy to DigitalOcean Droplet
       run: |
-        # Stop existing container if running
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'docker-compose down || true'
-        
-        # Deploy the new version (scp will copy the whole project to your droplet)
+
         scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
 
-        # Build and run Docker Compose on the droplet
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'cd /root/ciabot-public && docker-compose up -d --build'
