@@ -5,6 +5,14 @@ on:
     branches:
       - dev
 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy from'
+        required: true
+        default: 'dev'
+      
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,6 +20,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref_name }}
 
     - name: Set up Docker
       uses: docker/setup-buildx-action@v2
@@ -21,14 +31,24 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y docker-compose
 
-    - name: Export environment variables
+    - name: Set environment variables
       run: |
-        echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-        echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+          echo "Using development environment"
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          export DEPLOY_PATH="/root/ciabot-public"
+        else
+          echo "Using adhoc environment"
+          echo "POSTGRES_DB=${{ secrets.ADHOC_POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.ADHOC_POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.ADHOC_POSTGRES_PASSWORD }}" >> .env
+          export DEPLOY_PATH="/root/ciabot-public-adhoc"
+        fi
 
     - name: Build Docker image
-      run: docker compose build
+      run: docker compose --env-file .env build
 
     - name: Add SSH key
       uses: webfactory/ssh-agent@v0.9.0
@@ -40,7 +60,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'docker compose down || true'
 
-        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/root/ciabot-public/
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
+        :${{ github.event.inputs.branch == 'dev' && '/root/ciabot-public' || '/root/ciabot-public-adhoc' }}
 
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd /root/ciabot-public && docker compose up -d --build'
+        'cd $DEPLOY_PATH && docker-compose up -d --build'
