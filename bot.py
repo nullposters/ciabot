@@ -1,10 +1,10 @@
 import os
-import json
 import socket
 import random
 import string
 import logging
 import discord
+import jsonpickle
 from typing import Any
 from datetime import datetime
 from dotenv import load_dotenv
@@ -47,24 +47,24 @@ test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
     with open(settings_path, 'w', encoding='utf-8') as f:
-        json.dump(settings, f, indent=4)
+        f.write(jsonpickle.encode(settings))
 
 
-def load_settings() -> dict[str, float | list[str]]:
+def load_settings() -> dict[str, float | set[str]]:
     """Loads the settings from the settings.json file"""
     default_settings = {
         'redaction_chance': 0.08,
         'selection_chance': 0.005,
-        'trigger_words': [],
+        'trigger_words': set(),
         'trigger_word_chance': 0.1,
         'bypass_prefix': '>>',
-        'channel_blacklist': [],
+        'channel_blacklist': set(),
         'timeout_expiration': 0,
     }
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
-            settings = json.load(f)
-            for key in default_settings.keys():
+            settings = jsonpickle.decode(f.read())
+            for key, _ in default_settings.items():
                 if key not in settings:
                     settings[key] = default_settings[key]
             return settings
@@ -76,7 +76,20 @@ settings = load_settings()
 save_settings()
 
 
-REDACTED = "`[REDACTED]`"
+REDACTION = [
+    "`[REDACTED]`",
+    "`[EXPUNGED]`",
+    "`[CLASSIFIED]`",
+    "`[REDACTED BY CIA]`",
+    "`[REDACTED BY FBI]`",
+    "`[REDACTED BY NSA]`",
+    "`[REDACTED BY DHS]`",
+    "`[REDACTED BY MI6]`",
+    "`[REDACTED BY KGB]`",
+    "`********`",
+    "`████████"
+]
+
 JSBAD = "bad"
 
 
@@ -126,11 +139,11 @@ def redact_message(message: discord.Message, trigger_word_indices: list[int]) ->
     threshold = settings['trigger_word_chance'] if trigger_word_indices else settings['redaction_chance']
     for idx in indices:
         if random.random() < threshold:
-            message_content[idx] = REDACTED
+            message_content[idx] = random.choice(REDACTION)
             was_redacted = True
     if not was_redacted:
         random_index = random.choice(indices)
-        message_content[random_index] = REDACTED
+        message_content[random_index] = random.choice(REDACTION)
     return ' '.join(message_content)
 
 
@@ -167,18 +180,17 @@ def change_config_value(interaction: discord.Interaction, config_key: str, new_v
     save_settings()
 
 
-def add_elements_to_list(interaction: discord.Interaction, config_key: str, new_elements: list[Any]) -> None:
-    """Adds one or more elements to a list in the settings dictionary. The elements must be wrapped in a list, even if there is only one element."""
+def add_elements_to_set(interaction: discord.Interaction, config_key: str, new_elements: set[Any]) -> None:
+    """Adds one or more elements to a set in the settings dictionary. The elements must be wrapped in a set, even if there is only one element."""
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Adding elements {new_elements} to {config_key}")
-    settings[config_key].extend(new_elements)
+    settings[config_key].update(new_elements)
     save_settings()
 
 
-def remove_elements_from_list(interaction: discord.Interaction, config_key: str, old_elements: list[Any]) -> None:
-    """Removes one or more elements from a list in the settings dictionary. The elements must be wrapped in a list, even if there is only one element."""
+def remove_elements_from_set(interaction: discord.Interaction, config_key: str, old_elements: set[Any]) -> None:
+    """Removes one or more elements from a set in the settings dictionary. The elements must be wrapped in a set, even if there is only one element."""
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {old_elements} from {config_key}")
-    for element in old_elements:
-        settings[config_key].remove(element)
+    settings[config_key].difference_update(old_elements)
     save_settings()
 
 
@@ -206,14 +218,13 @@ async def bot_timeout(interaction: discord.Interaction, duration: app_commands.R
     save_settings()
     await interaction.response.send_message(f"Timed out for {duration} minutes")
 
-
 @client.tree.command(
     name="show-values",
     description="Shows the current configuration values"
 )
 async def show_values(interaction: discord.Interaction):
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Showing configuration values")
-    await interaction.response.send_message(f"```json\n{json.dumps(settings, indent=2)}\n```", ephemeral=True)
+    await interaction.response.send_message(f"```json\n{jsonpickle.encode(settings, indent=2)}\n```", ephemeral=True)
 
 
 @client.tree.command(
@@ -272,9 +283,9 @@ async def change_trigger_word_chance(interaction: discord.Interaction, new_chanc
     name="add-channels-to-blacklist",
     description="Adds a specified channel to the blacklist"
 )
-@app_commands.describe(new_channel_ids='The channel ID to add to the blacklist. Multiple channels can be added by separating them with a comma.')
+@app_commands.describe(new_channel_ids='The channel ID to add to the blacklist. Multiple channels can be added by separating them with a space.')
 async def add_channel_to_blacklists(interaction: discord.Interaction, new_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: add_elements_to_list(interaction, 'channel_blacklist', [channel_id.strip() for channel_id in new_channel_ids.split(',')]), 'channel_blacklist', new_channel_ids)
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_blacklist', new_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -282,9 +293,9 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
     name="remove-channels-from-blacklist",
     description="Removes a specified channel to the blacklist"
 )
-@app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a comma.')
+@app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a space.')
 async def remove_channel_from_blacklists(interaction: discord.Interaction, old_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_list(interaction, 'channel_blacklist', [channel_id.strip() for channel_id in old_channel_ids.split(',')]), 'channel_blacklist', old_channel_ids)
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_blacklist', old_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -292,9 +303,9 @@ async def remove_channel_from_blacklists(interaction: discord.Interaction, old_c
     name="add-trigger-words",
     description="Adds a trigger word to the list of words that trigger the bot"
 )
-@app_commands.describe(new_trigger_words='The new trigger word to add to the list. Multiple trigger words can be added by separating them with a comma.')
+@app_commands.describe(new_trigger_words='The new trigger word to add to the list. Multiple trigger words can be added by separating them with a space.')
 async def add_trigger_words(interaction: discord.Interaction, new_trigger_words: str):
-    message = run_if_author_is_admin(interaction, lambda: add_elements_to_list(interaction, 'trigger_words', [word.strip() for word in new_trigger_words.split(',')]), 'trigger_words', new_trigger_words)
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'trigger_words', {word.strip() for word in new_trigger_words.split(' ')}), 'trigger_words', new_trigger_words)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -302,9 +313,9 @@ async def add_trigger_words(interaction: discord.Interaction, new_trigger_words:
     name="remove-trigger-words",
     description="Removes a trigger word from the list of words that trigger the bot"
 )
-@app_commands.describe(old_trigger_words='The trigger word to remove from the list. Multiple trigger words can be removed by separating them with a comma.')
+@app_commands.describe(old_trigger_words='The trigger word to remove from the list. Multiple trigger words can be removed by separating them with a space.')
 async def remove_trigger_words(interaction: discord.Interaction, old_trigger_words: str):
-    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_list(interaction, 'trigger_words', [word.strip() for word in old_trigger_words.split(',')]), 'trigger_words', old_trigger_words)
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'trigger_words', {word.strip() for word in old_trigger_words.split(' ')}), 'trigger_words', old_trigger_words)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -329,11 +340,6 @@ Available commands:
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
-
-
-@client.event
-async def on_ready():
-    logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
 async def run_message_redaction(message: discord.Message):
@@ -365,12 +371,16 @@ async def run_reactions(message: discord.Message):
 
 
 @client.event
+async def on_ready():
+    logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
+
+
+@client.event
 async def on_message(message: discord.Message):
-    is_self = message.author.id == client.user.id
-    if is_self: # All messages sent by the bot are ignored
+    if message.author.bot: # All messages sent by any bot are ignored
         return
-    await run_message_redaction(message)
     await run_reactions(message)
+    await run_message_redaction(message) # Run last, as it may delete the message
 
 
 client.run(token)

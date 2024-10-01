@@ -693,3 +693,6 @@ dist
 
 # Ignore the settings file
 *.json
+
+# Macos filler
+**/.DS_Store
