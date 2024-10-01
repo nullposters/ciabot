@@ -1,17 +1,9 @@
-name: Deploy to DigitalOcean Droplet
+name: Deploy to DigitalOcean Droplet (Production)
 
 on:
   push:
     branches:
-      - dev
-
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to deploy from'
-        required: true
-        default: 'dev'
-      
+      - main
 
 jobs:
   deploy:
@@ -21,7 +13,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        ref: ${{ github.event.inputs.branch || github.ref_name }}
+        ref: ${{ github.ref_name }}
 
     - name: Set up Docker
       uses: docker/setup-buildx-action@v2
@@ -33,8 +25,6 @@ jobs:
 
     - name: Set environment variables
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
-          echo "Using development environment"
           echo "POSTGRES_HOST=db" >> .env
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
@@ -43,26 +33,31 @@ jobs:
           echo "CIABOT_SETTINGS_PATH=${{ secrets.CIABOT_SETTINGS_PATH }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
           echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
-          echo "LOG_DESTINATION=${{ secrets.LOG_DESTINATION }}" >> .env
+          echo "LOG_DESTINATION=${{ secrets.PAPERTRAIL_LOG_DESTINATION }}" >> .env
           echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT }}" >> .env
-          export DEPLOY_PATH="/root/ciabot-public"
+          echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
+          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
+          echo "CIABOT_NETWORK_PORT=5432" >> .env
+          echo "CIABOT_PORT=81" >> .env
+          echo "DEPLOY_PATH=/root/ciabot-public" >> .env
+          echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
+          echo "COMPOSE_FILE=docker-compose.yml" >> .env
+
+          echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
+          echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
+          echo "COMPOSE_FILE=docker-compose.yml" >> $GITHUB_ENV
+        
+    - name: Create Docker Network if not exists
+      run: |
+        if ! docker network ls --format '{{.Name}}' | grep -w "${CIABOT_NETWORK_NAME}"; then
+          echo "Creating network ${CIABOT_NETWORK_NAME}"
+          docker network create ${CIABOT_NETWORK_NAME}
         else
-          echo "Using adhoc environment"
-          echo "POSTGRES_HOST=db" >> .env
-          echo "CIABOT_SETTINGS_PATH=${{ secrets.CIABOT_SETTINGS_PATH }}" >> .env
-          echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
-          echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
-          echo "POSTGRES_DB=${{ secrets.ADHOC_POSTGRES_DB }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.ADHOC_POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.ADHOC_POSTGRES_PASSWORD }}" >> .env
-          echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_ADHOC }}" >> .env
-          echo "LOG_DESTINATION=${{ secrets.PAPERTRAIL_LOG_DESTINATION_ADHOC }}" >> .env
-          echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_ADHOC }}" >> .env
-          export DEPLOY_PATH="/root/ciabot-public-adhoc"
+          echo "Network ${CIABOT_NETWORK_NAME} already exists"
         fi
 
     - name: Build Docker image
-      run: docker compose --env-file .env build
+      run: docker compose --env-file .env -f ${{ env.COMPOSE_FILE }} build
 
     - name: Add SSH key
       uses: webfactory/ssh-agent@v0.9.0
@@ -71,16 +66,10 @@ jobs:
 
     - name: Deploy to DigitalOcean Droplet
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
-          DEPLOY_PATH="/root/ciabot-public"
-        else
-          DEPLOY_PATH="/root/ciabot-public-adhoc"
-        fi
+        ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
+        "docker compose -f ${{ env.COMPOSE_FILE }} down || true"
+        
+        scp -o StrictHostKeyChecking=no -r * .env ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ env.DEPLOY_PATH }}
         
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'docker compose down || true'
-        
-        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:$DEPLOY_PATH
-        
-        ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        "cd $DEPLOY_PATH && docker compose up -d --build"
+        "cd ${{ env.DEPLOY_PATH }} && docker compose --env-file .env -f ${{ env.COMPOSE_FILE }} up -d --build"

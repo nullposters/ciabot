@@ -2,7 +2,7 @@ version: '3'
 services:
   db:
     image: postgres:15-alpine
-    container_name: ciabot_postgres
+    container_name: ciabot_postgres_dev
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -25,13 +25,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - ciabot_network
+      - ciabot_network_dev
     ports:
-      - "5432:5432"
+      - "5435:5432"
 
   ciabot:
     build: .
-    container_name: ciabot_public
+    container_name: ciabot_public_dev
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -52,15 +52,15 @@ services:
       CIABOT_NETWORK_NAME: ${CIABOT_NETWORK_NAME}
       COMPOSE_FILE: ${COMPOSE_FILE}
     networks:
-      - ciabot_network
+      - ciabot_network_dev
     depends_on:
       - db
     ports:
-      - "81:3001"
+      - "83:3001"
 
 volumes:
   pgdata:
 
 networks:
-  ciabot_network:
+  ciabot_network_dev:
     external: true
