@@ -312,6 +312,7 @@ async def add_channels_to_whitelist(interaction: discord.Interaction, new_channe
     description="Reads the configuration settings from the database"
 )
 async def read_config(interaction: discord.Interaction):
+    conn = None  # Initialize connection variable
     try:
         conn = psycopg2.connect(**db_configuration)
         cursor = conn.cursor()
@@ -319,14 +320,16 @@ async def read_config(interaction: discord.Interaction):
         rows = cursor.fetchall()
         result = ""
         for row in rows:
-            result += str(row) + "\n"
+            result += ', '.join(map(str, row)) + "\n"
     except psycopg2.Error as e:
         print("Error fetching data")
         print(e)
+        result = "There was an error fetching the configuration settings."
     finally:
         if conn:
             cursor.close()
             conn.close()
+    
     await interaction.response.send_message(result, ephemeral=True)
 
 @client.tree.command(
