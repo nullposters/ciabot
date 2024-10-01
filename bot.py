@@ -43,9 +43,6 @@ admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
 
-use_channel_whitelist = False
-
-
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
     with open(settings_path, 'w', encoding='utf-8') as f:
@@ -362,28 +359,29 @@ Available commands:
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
-
+    
+def is_bot_action_allowed_in_channel(message: discord.Message) -> bool:
+    is_whitelist_enabled = bool(settings['channel_whitelist'])
+    is_channel_in_whitelist = message.channel.id in settings['channel_whitelist']
+    is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
+    is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
+    return is_channel_in_blacklist or is_timed_out or (is_whitelist_enabled and not is_channel_in_whitelist)
 
 async def run_message_redaction(message: discord.Message):
     """Redacts messages if they meet the criteria"""
     has_bypass_character = message.content.startswith(settings['bypass_prefix'])
     has_image = len(message.attachments) > 0 and any('image' in attachment.content_type for attachment in message.attachments)
-    is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
-    is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
-    if has_bypass_character or has_image or is_channel_in_blacklist or is_timed_out:
+    if has_bypass_character or has_image:
         return
-    use_channel_whitelist = len(settings['channel_whitelist']) > 0 # if there are any entries in the channel whitelist, default to the whitelist instead of the blacklist
-    is_channel_in_whitelist = message.channel.id in settings['channel_whitelist']
-    if (use_channel_whitelist) == False or (use_channel_whitelist == True and is_channel_in_whitelist):
-        trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
-        if trigger_word_indices or random.random() < settings['redaction_chance']:
-            redacted_message = redact_message(message, trigger_word_indices)
-            try:
-                username = message.author.display_name
-                await message.delete()
-                await message.channel.send(f"{username}:\n{redacted_message}")
-            except Exception as e:
-                logging.error(f"Error redacting message: {e}")
+    trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
+    if trigger_word_indices or random.random() < settings['redaction_chance']:
+        redacted_message = redact_message(message, trigger_word_indices)
+        try:
+            username = message.author.display_name
+            await message.delete()
+            await message.channel.send(f"{username}:\n{redacted_message}")
+        except Exception as e:
+            logging.error(f"Error redacting message: {e}")
 
 
 async def run_reactions(message: discord.Message):
@@ -403,6 +401,8 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if message.author.bot: # All messages sent by any bot are ignored
+        return
+    if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or whitelist or otherwise stops bot from using the current channel
         return
     await run_reactions(message)
     await run_message_redaction(message) # Run last, as it may delete the message
