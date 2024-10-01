@@ -1,0 +1,66 @@
+version: '3'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ciabot_postgres_dev
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      CIABOT_TOKEN: ${CIABOT_TOKEN}
+      CIABOT_SETTINGS_PATH: ${CIABOT_SETTINGS_PATH}
+      CIABOT_ADMIN_ID: ${CIABOT_ADMIN_ID}
+      CIABOT_GUILD_ID: ${CIABOT_GUILD_ID}
+      LOG_DESTINATION: ${LOG_DESTINATION}
+      LOG_PORT: ${LOG_PORT}
+      CIABOT_CONTAINER_NAME: ${CIABOT_CONTAINER_NAME}
+      POSTGRES_CONTAINER_NAME: ${POSTGRES_CONTAINER_NAME}
+      CIABOT_NETWORK_PORT: ${CIABOT_NETWORK_PORT}
+      CIABOT_PORT: ${CIABOT_PORT}
+      DEPLOY_PATH: ${DEPLOY_PATH}
+      CIABOT_NETWORK_NAME: ${CIABOT_NETWORK_NAME}
+      COMPOSE_FILE: ${COMPOSE_FILE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ciabot_network_dev
+    ports:
+      - "5435:5432"
+
+  ciabot:
+    build: .
+    container_name: ciabot_public_dev
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      CIABOT_TOKEN: ${CIABOT_TOKEN}
+      CIABOT_SETTINGS_PATH: ${CIABOT_SETTINGS_PATH}
+      CIABOT_ADMIN_ID: ${CIABOT_ADMIN_ID}
+      CIABOT_GUILD_ID: ${CIABOT_GUILD_ID}
+      LOG_DESTINATION: ${LOG_DESTINATION}
+      LOG_PORT: ${LOG_PORT}
+      CIABOT_CONTAINER_NAME: ${CIABOT_CONTAINER_NAME}
+      POSTGRES_CONTAINER_NAME: ${POSTGRES_CONTAINER_NAME}
+      CIABOT_NETWORK_PORT: ${CIABOT_NETWORK_PORT}
+      CIABOT_PORT: ${CIABOT_PORT}
+      DEPLOY_PATH: ${DEPLOY_PATH}
+      CIABOT_NETWORK_NAME: ${CIABOT_NETWORK_NAME}
+      COMPOSE_FILE: ${COMPOSE_FILE}
+    networks:
+      - ciabot_network_dev
+    depends_on:
+      - db
+    ports:
+      - "83:3001"
+
+volumes:
+  pgdata:
+
+networks:
+  ciabot_network_dev:
+    external: true
