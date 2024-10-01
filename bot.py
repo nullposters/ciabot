@@ -5,6 +5,7 @@ import string
 import logging
 import discord
 import jsonpickle
+import psycopg2
 from typing import Any
 from datetime import datetime
 from dotenv import load_dotenv
@@ -42,6 +43,15 @@ token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compat
 admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
+
+# database settings and init
+db_configuration = {
+    'dbname': os.getenv('POSTGRES_DB'),
+    'user': os.getenv('POSTGRES_USER'),
+    'password': os.getenv('POSTGRES_PASSWORD'),
+    'host': 'db',
+    'port': '5432'
+}
 
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
@@ -296,6 +306,28 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
 async def add_channels_to_whitelist(interaction: discord.Interaction, new_channel_ids: str):
     message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_whitelist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_whitelist', new_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
+
+@client.tree.command(
+    name="read-config",
+    description="Reads the configuration settings from the database"
+)
+async def read_config(interaction: discord.Interaction):
+    try:
+        conn = psycopg2.connect(**db_configuration)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM configuration_settings")
+        rows = cursor.fetchall()
+        result = ""
+        for row in rows:
+            result += str(row) + "\n"
+    except psycopg2.Error as e:
+        print("Error fetching data")
+        print(e)
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+    await interaction.response.send_message(result, ephemeral=True)
 
 @client.tree.command(
     name="remove-channels-from-blacklist",
