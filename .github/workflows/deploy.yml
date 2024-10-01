@@ -78,4 +78,4 @@ jobs:
         :${{ github.event.inputs.branch == 'dev' && '/root/ciabot-public' || '/root/ciabot-public-adhoc' }}
 
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd $DEPLOY_PATH && docker-compose up -d --build'
+        'cd $DEPLOY_PATH && docker compose up -d --build'
