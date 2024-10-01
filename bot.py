@@ -43,6 +43,8 @@ admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
 
+use_channel_whitelist = False
+
 
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
@@ -59,7 +61,8 @@ def load_settings() -> dict[str, float | set[str]]:
         'trigger_word_chance': 0.1,
         'bypass_prefix': '>>',
         'channel_blacklist': set(),
-        'timeout_expiration': 0,
+        'channel_whitelist': set(),
+        'timeout_expiration': 0
     }
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
@@ -288,6 +291,14 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
     message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_blacklist', new_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
+@client.tree.command(
+    name="add-channels-to-whitelist",
+    description="Adds a specified channel to the whitelist"
+)
+@app_commands.describe(new_channel_ids='The channel ID to add to the whitelist. Multiple channels can be added by separating them with a space.')
+async def add_channels_to_whitelist(interaction: discord.Interaction, new_channel_ids: str):
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_whitelist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_whitelist', new_channel_ids)
+    await interaction.response.send_message(message, ephemeral=True)
 
 @client.tree.command(
     name="remove-channels-from-blacklist",
@@ -296,6 +307,15 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
 @app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a space.')
 async def remove_channel_from_blacklists(interaction: discord.Interaction, old_channel_ids: str):
     message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_blacklist', old_channel_ids)
+    await interaction.response.send_message(message, ephemeral=True)
+
+@client.tree.command(
+    name="remove-channels-from-whitelist",
+    description="Removes a specified channel to the whitelist"
+)
+@app_commands.describe(old_channel_ids='The channel ID to remove from the whitelist. Multiple channels can be removed by separating them with a space.')
+async def remove_channels_from_whitelist(interaction: discord.Interaction, old_channel_ids: str):
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_whitelist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_whitelist', old_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -336,7 +356,9 @@ Available commands:
 `/change-trigger-word-chance <value>`: Chance (in percentage) to redact words that are considered 'trigger words'. If a trigger word is present in the message, this is the chance that any given word will be `[REDACTED]`. If no word is replaced, one trigger word will be chosen randomly and replaced.
 `/show-values`: Responds with the current configuration.
 `/add-channel-to-blacklist <value>`: Adds a channel ID to the channel blacklist
+`/add-channel-to-whitelist <value>`: Adds a channel ID to the channel whitelist, and sets redaction to only work in whitelisted channels if there are any channels in the whitelist
 `/remove-channel-from-blacklist <value>`: Removes a channel ID from the channel blacklist
+`/remove-channel-from-whitelist <value>`: Removes a channel ID from the channel whitelist, and if the whitelist is clear, sets redaction back to blacklist mode
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
@@ -350,15 +372,18 @@ async def run_message_redaction(message: discord.Message):
     is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
     if has_bypass_character or has_image or is_channel_in_blacklist or is_timed_out:
         return
-    trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
-    if trigger_word_indices or random.random() < settings['redaction_chance']:
-        redacted_message = redact_message(message, trigger_word_indices)
-        try:
-            username = message.author.display_name
-            await message.delete()
-            await message.channel.send(f"{username}:\n{redacted_message}")
-        except Exception as e:
-            logging.error(f"Error redacting message: {e}")
+    use_channel_whitelist = len(settings['channel_whitelist']) > 0 # if there are any entries in the channel whitelist, default to the whitelist instead of the blacklist
+    is_channel_in_whitelist = message.channel.id in settings['channel_whitelist']
+    if (use_channel_whitelist) == False or (use_channel_whitelist == True and is_channel_in_whitelist):
+        trigger_word_indices = [i for i, word in enumerate(message.content.lower().split(' ')) if word in settings['trigger_words']]
+        if trigger_word_indices or random.random() < settings['redaction_chance']:
+            redacted_message = redact_message(message, trigger_word_indices)
+            try:
+                username = message.author.display_name
+                await message.delete()
+                await message.channel.send(f"{username}:\n{redacted_message}")
+            except Exception as e:
+                logging.error(f"Error redacting message: {e}")
 
 
 async def run_reactions(message: discord.Message):
