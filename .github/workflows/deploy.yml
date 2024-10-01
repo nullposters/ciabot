@@ -71,11 +71,16 @@ jobs:
 
     - name: Deploy to DigitalOcean Droplet
       run: |
+        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+          DEPLOY_PATH="/root/ciabot-public"
+        else
+          DEPLOY_PATH="/root/ciabot-public-adhoc"
+        fi
+        
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         'docker compose down || true'
-
-        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        :${{ github.event.inputs.branch == 'dev' && '/root/ciabot-public' || '/root/ciabot-public-adhoc' }}
-
+        
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:$DEPLOY_PATH
+        
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-        'cd $DEPLOY_PATH && docker compose up -d --build'
+        "cd $DEPLOY_PATH && docker compose up -d --build"
