@@ -365,7 +365,13 @@ def is_bot_action_allowed_in_channel(message: discord.Message) -> bool:
     is_channel_in_whitelist = message.channel.id in settings['channel_whitelist']
     is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
     is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
-    return is_channel_in_blacklist or is_timed_out or (is_whitelist_enabled and not is_channel_in_whitelist)
+    if is_channel_in_blacklist or is_timed_out:
+        return False
+    
+    if is_whitelist_enabled and not is_channel_in_whitelist:
+        return False
+    
+    return True
 
 async def run_message_redaction(message: discord.Message):
     """Redacts messages if they meet the criteria"""
