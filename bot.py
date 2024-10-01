@@ -283,9 +283,9 @@ async def change_trigger_word_chance(interaction: discord.Interaction, new_chanc
     name="add-channels-to-blacklist",
     description="Adds a specified channel to the blacklist"
 )
-@app_commands.describe(new_channel_ids='The channel ID to add to the blacklist. Multiple channels can be added by separating them with a comma.')
+@app_commands.describe(new_channel_ids='The channel ID to add to the blacklist. Multiple channels can be added by separating them with a space.')
 async def add_channel_to_blacklists(interaction: discord.Interaction, new_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in new_channel_ids.split(',')}), 'channel_blacklist', new_channel_ids)
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_blacklist', new_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -293,9 +293,9 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
     name="remove-channels-from-blacklist",
     description="Removes a specified channel to the blacklist"
 )
-@app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a comma.')
+@app_commands.describe(old_channel_ids='The channel ID to remove from the blacklist. Multiple channels can be removed by separating them with a space.')
 async def remove_channel_from_blacklists(interaction: discord.Interaction, old_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in old_channel_ids.split(',')}), 'channel_blacklist', old_channel_ids)
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_blacklist', old_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -303,9 +303,9 @@ async def remove_channel_from_blacklists(interaction: discord.Interaction, old_c
     name="add-trigger-words",
     description="Adds a trigger word to the list of words that trigger the bot"
 )
-@app_commands.describe(new_trigger_words='The new trigger word to add to the list. Multiple trigger words can be added by separating them with a comma.')
+@app_commands.describe(new_trigger_words='The new trigger word to add to the list. Multiple trigger words can be added by separating them with a space.')
 async def add_trigger_words(interaction: discord.Interaction, new_trigger_words: str):
-    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'trigger_words', {word.strip() for word in new_trigger_words.split(',')}), 'trigger_words', new_trigger_words)
+    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'trigger_words', {word.strip() for word in new_trigger_words.split(' ')}), 'trigger_words', new_trigger_words)
     await interaction.response.send_message(message, ephemeral=True)
 
 
@@ -313,9 +313,9 @@ async def add_trigger_words(interaction: discord.Interaction, new_trigger_words:
     name="remove-trigger-words",
     description="Removes a trigger word from the list of words that trigger the bot"
 )
-@app_commands.describe(old_trigger_words='The trigger word to remove from the list. Multiple trigger words can be removed by separating them with a comma.')
+@app_commands.describe(old_trigger_words='The trigger word to remove from the list. Multiple trigger words can be removed by separating them with a space.')
 async def remove_trigger_words(interaction: discord.Interaction, old_trigger_words: str):
-    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'trigger_words', {word.strip() for word in old_trigger_words.split(',')}), 'trigger_words', old_trigger_words)
+    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'trigger_words', {word.strip() for word in old_trigger_words.split(' ')}), 'trigger_words', old_trigger_words)
     await interaction.response.send_message(message, ephemeral=True)
 
 
