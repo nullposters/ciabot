@@ -17,6 +17,7 @@ from logging.handlers import SysLogHandler
 
 load_dotenv()
 
+is_production = os.getenv('IS_PRODUCTION', "False").lower() == "true"
 
 # Logging initialization
 class ContextFilter(logging.Filter):
@@ -43,6 +44,7 @@ token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compat
 admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
+debug_channel_id = int(os.getenv('DEBUG_CHANNEL_ID'))
 
 # database settings and init
 db_configuration = {
@@ -50,7 +52,7 @@ db_configuration = {
     'user': os.getenv('POSTGRES_USER'),
     'password': os.getenv('POSTGRES_PASSWORD'),
     'host': 'db',
-    'port': '5432'
+    'port': '5434'
 }
 
 def save_settings() -> None:
@@ -69,7 +71,8 @@ def load_settings() -> dict[str, float | set[str]]:
         'bypass_prefix': '>>',
         'channel_blacklist': set(),
         'channel_whitelist': set(),
-        'timeout_expiration': 0
+        'timeout_expiration': 0,
+        'debug_channel_id': str(debug_channel_id)
     }
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
@@ -278,6 +281,14 @@ async def change_redacted(interaction: discord.Interaction, new_chance: app_comm
     message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'redaction_chance', new_chance/100.0), 'redaction_chance')
     await interaction.response.send_message(message, ephemeral=True)
 
+@client.tree.command(
+    name="change-debug-channel-id",
+    description="Changes debug channel ID"
+)
+@app_commands.describe(channel_id='The channel ID to whitelist the non prod bot to')
+async def change_debug_channel_id(interaction: discord.Interaction, channel_id: str):
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'debug_channel_id', channel_id), 'debug_channel_id')
+    await interaction.response.send_message(message, ephemeral=True)
 
 @client.tree.command(
     name="change-trigger-word-chance",
@@ -442,6 +453,8 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if message.author.bot: # All messages sent by any bot are ignored
+        return
+    if not is_production and str(message.channel.id) != settings['debug_channel_id']: 
         return
     if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or whitelist or otherwise stops bot from using the current channel
         return

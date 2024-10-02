@@ -35,6 +35,8 @@ jobs:
           echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
           echo "LOG_DESTINATION=${{ secrets.PAPERTRAIL_LOG_DESTINATION }}" >> .env
           echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT }}" >> .env
+          echo "IS_PRODUCTION=true" >> .env
+          echo "DEBUG_CHANNEL_ID=1288950494911402024" >> .env
           echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
           echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
           echo "CIABOT_NETWORK_PORT=5432" >> .env
