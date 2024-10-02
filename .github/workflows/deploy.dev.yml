@@ -70,7 +70,7 @@ jobs:
           echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_ADHOC }}" >> .env
           echo "CIABOT_CONTAINER_NAME=ciabot_public_adhoc" >> .env
           echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_adhoc" >> .env
-          echo "CIABOT_NETWORK_PORT=5433" >> .env
+          echo "CIABOT_NETWORK_PORT=5434" >> .env
           echo "CIABOT_PORT=82" >> .env
           echo "DEPLOY_PATH=/root/ciabot-public-adhoc" >> .env
           echo "CIABOT_NETWORK_NAME=ciabot_network_adhoc" >> .env

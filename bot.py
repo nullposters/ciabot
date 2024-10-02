@@ -50,7 +50,7 @@ db_configuration = {
     'user': os.getenv('POSTGRES_USER'),
     'password': os.getenv('POSTGRES_PASSWORD'),
     'host': 'db',
-    'port': '5434'
+    'port': '5432'
 }
 
 def save_settings() -> None:
