@@ -44,7 +44,7 @@ jobs:
           echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
           echo "LOG_DESTINATION=${{ secrets.PAPERTRAIL_LOG_DESTINATION_DEV }}" >> .env
           echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_DEV }}" >> .env
-          echo "IS_PRODUCTION=false"
+          echo "IS_PRODUCTION=false" >> .env
           echo "DEBUG_CHANNEL_ID=1288950494911402024" >> .env
           echo "CIABOT_CONTAINER_NAME=ciabot_public_dev" >> .env
           echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_dev" >> .env
@@ -70,7 +70,7 @@ jobs:
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_ADHOC }}" >> .env
           echo "LOG_DESTINATION=${{ secrets.PAPERTRAIL_LOG_DESTINATION_ADHOC }}" >> .env
           echo "LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_ADHOC }}" >> .env
-          echo "IS_PRODUCTION=false"
+          echo "IS_PRODUCTION=false" >> .env
           echo "DEBUG_CHANNEL_ID=1288950494911402024" >> .env
           echo "CIABOT_CONTAINER_NAME=ciabot_public_adhoc" >> .env
           echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_adhoc" >> .env
