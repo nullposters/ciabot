@@ -5,7 +5,6 @@ import string
 import logging
 import discord
 import jsonpickle
-import psycopg2
 from typing import Any
 from datetime import datetime
 from dotenv import load_dotenv
@@ -39,21 +38,11 @@ logger.addHandler(syslog)
 logger.setLevel(logging.INFO)
 # End logging initialization
 
-
 token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compatible with the original token name
 admin_id = os.getenv('CIABOT_ADMIN_ID')
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
 debug_channel_id = int(os.getenv('DEBUG_CHANNEL_ID'))
-
-# database settings and init
-db_configuration = {
-    'dbname': os.getenv('POSTGRES_DB'),
-    'user': os.getenv('POSTGRES_USER'),
-    'password': os.getenv('POSTGRES_PASSWORD'),
-    'host': 'db',
-    'port': '5434'
-}
 
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
@@ -386,7 +375,7 @@ async def run_message_redaction(message: discord.Message):
 
 async def run_reactions(message: discord.Message):
     """Reacts to messages if they meet the criteria"""
-    if "js" in message.content.lower():
+    if "http" not in message.content.lower() and "js" in message.content.lower():
         try:
             await react_with_funny_letters(message, JSBAD)
         except Exception as e:
