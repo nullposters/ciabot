@@ -70,7 +70,6 @@ def load_settings() -> dict[str, float | set[str]]:
         'trigger_word_chance': 0.1,
         'bypass_prefix': '>>',
         'channel_blacklist': set(),
-        'channel_whitelist': set(),
         'timeout_expiration': 0,
         'debug_channel_id': str(debug_channel_id)
     }
@@ -310,40 +309,6 @@ async def add_channel_to_blacklists(interaction: discord.Interaction, new_channe
     await interaction.response.send_message(message, ephemeral=True)
 
 @client.tree.command(
-    name="add-channels-to-whitelist",
-    description="Adds a specified channel to the whitelist"
-)
-@app_commands.describe(new_channel_ids='The channel ID to add to the whitelist. Multiple channels can be added by separating them with a space.')
-async def add_channels_to_whitelist(interaction: discord.Interaction, new_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: add_elements_to_set(interaction, 'channel_whitelist', {channel_id.strip() for channel_id in new_channel_ids.split(' ')}), 'channel_whitelist', new_channel_ids)
-    await interaction.response.send_message(message, ephemeral=True)
-
-@client.tree.command(
-    name="read-config",
-    description="Reads the configuration settings from the database"
-)
-async def read_config(interaction: discord.Interaction):
-    conn = None  # Initialize connection variable
-    try:
-        conn = psycopg2.connect(**db_configuration)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM configuration_settings")
-        rows = cursor.fetchall()
-        result = ""
-        for row in rows:
-            result += ', '.join(map(str, row)) + "\n"
-    except psycopg2.Error as e:
-        print("Error fetching data")
-        print(e)
-        result = "There was an error fetching the configuration settings."
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-    
-    await interaction.response.send_message(result, ephemeral=True)
-
-@client.tree.command(
     name="remove-channels-from-blacklist",
     description="Removes a specified channel to the blacklist"
 )
@@ -351,16 +316,6 @@ async def read_config(interaction: discord.Interaction):
 async def remove_channel_from_blacklists(interaction: discord.Interaction, old_channel_ids: str):
     message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_blacklist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_blacklist', old_channel_ids)
     await interaction.response.send_message(message, ephemeral=True)
-
-@client.tree.command(
-    name="remove-channels-from-whitelist",
-    description="Removes a specified channel to the whitelist"
-)
-@app_commands.describe(old_channel_ids='The channel ID to remove from the whitelist. Multiple channels can be removed by separating them with a space.')
-async def remove_channels_from_whitelist(interaction: discord.Interaction, old_channel_ids: str):
-    message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'channel_whitelist', {channel_id.strip() for channel_id in old_channel_ids.split(' ')}), 'channel_whitelist', old_channel_ids)
-    await interaction.response.send_message(message, ephemeral=True)
-
 
 @client.tree.command(
     name="add-trigger-words",
@@ -399,22 +354,15 @@ Available commands:
 `/change-trigger-word-chance <value>`: Chance (in percentage) to redact words that are considered 'trigger words'. If a trigger word is present in the message, this is the chance that any given word will be `[REDACTED]`. If no word is replaced, one trigger word will be chosen randomly and replaced.
 `/show-values`: Responds with the current configuration.
 `/add-channel-to-blacklist <value>`: Adds a channel ID to the channel blacklist
-`/add-channel-to-whitelist <value>`: Adds a channel ID to the channel whitelist, and sets redaction to only work in whitelisted channels if there are any channels in the whitelist
 `/remove-channel-from-blacklist <value>`: Removes a channel ID from the channel blacklist
-`/remove-channel-from-whitelist <value>`: Removes a channel ID from the channel whitelist, and if the whitelist is clear, sets redaction back to blacklist mode
 `/add-trigger-word <value>`: Adds a new trigger word to the dictionary.
 `/remove-trigger-word <value>`: Removes a trigger word from the dictionary if present.
 `/help`: Lists all available commands with their descriptions, along with some tips.""", ephemeral=True)
     
 def is_bot_action_allowed_in_channel(message: discord.Message) -> bool:
-    is_whitelist_enabled = bool(settings['channel_whitelist'])
-    is_channel_in_whitelist = message.channel.id in settings['channel_whitelist']
     is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
     is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
     if is_channel_in_blacklist or is_timed_out:
-        return False
-    
-    if is_whitelist_enabled and not is_channel_in_whitelist:
         return False
     
     return True
@@ -456,7 +404,7 @@ async def on_message(message: discord.Message):
         return
     if not is_production and str(message.channel.id) != settings['debug_channel_id']: 
         return
-    if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or whitelist or otherwise stops bot from using the current channel
+    if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or otherwise stops bot from using the current channel
         return
     await run_reactions(message)
     await run_message_redaction(message) # Run last, as it may delete the message
