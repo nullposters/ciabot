@@ -22,6 +22,8 @@ services:
       DEPLOY_PATH: ${DEPLOY_PATH}
       CIABOT_NETWORK_NAME: ${CIABOT_NETWORK_NAME}
       COMPOSE_FILE: ${COMPOSE_FILE}
+      IS_PRODUCTION: ${IS_PRODUCTION}
+      DEBUG_CHANNEL_ID: ${DEBUG_CHANNEL_ID}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -51,6 +53,8 @@ services:
       DEPLOY_PATH: ${DEPLOY_PATH}
       CIABOT_NETWORK_NAME: ${CIABOT_NETWORK_NAME}
       COMPOSE_FILE: ${COMPOSE_FILE}
+      IS_PRODUCTION: ${IS_PRODUCTION}
+      DEBUG_CHANNEL_ID: ${DEBUG_CHANNEL_ID}
     networks:
       - ciabot_network_dev
     depends_on:
