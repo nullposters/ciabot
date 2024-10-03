@@ -26,6 +26,7 @@ def load_settings() -> dict[str, float | set[str]]:
         'trigger_word_chance': 0.1,
         'bypass_prefix': '>>',
         'channel_blacklist': set(),
+        'channel_whitelist': set(),
         'timeout_expiration': 0,
         'debug_channel_id': str(debug_channel_id)
     }
