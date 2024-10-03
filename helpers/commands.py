@@ -14,7 +14,7 @@ from settings import (add_elements_to_set, change_config_value, load_settings,
                       remove_elements_from_set, save_settings, settings)
 
 load_dotenv()
-admin_id = os.getenv('ADMIN_ID')
+admin_id = os.getenv('ADMIN_ID', 'CIABOT_ADMIN_ID')
 logger = logging.getLogger(__name__)
 
 
