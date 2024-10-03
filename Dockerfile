@@ -40,6 +40,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Copy just the code files
 COPY . ./
+RUN find . -name "*.py" -exec cp {} ./ \;
 
 # Command to run your bot
 CMD [ "python", "bot.py" ]
