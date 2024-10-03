@@ -1,22 +1,18 @@
+import logging
 import os
-import sys
 import random
 import string
-import discord
-import logging
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
-
-from bot import client
+import sys
 from datetime import datetime
-from settings import settings
 from unicodedata import lookup
 
+import discord
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+from settings import settings
 
 token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compatible with the original token name
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
-is_production = os.getenv('IS_PRODUCTION', "False").lower() == "true"
-debug_channel_id = int(os.getenv('DEBUG_CHANNEL_ID'))
 
 REDACTION = [
     "`[REDACTED]`",
@@ -97,21 +93,3 @@ async def run_reactions(message: discord.Message):
             await react_with_funny_letters(message, JSBAD)
         except Exception as e:
             logging.error(f"Error while reacting to message: {e}")
-
-
-@client.event
-async def on_ready():
-    logging.info(f'Logged in as {client.user} (ID: {client.user.id})')
-
-
-@client.event
-async def on_message(message: discord.Message):
-    if message.author.bot: # All messages sent by any bot are ignored
-        return
-    if not is_production and str(message.channel.id) != settings['debug_channel_id']: 
-        return
-    if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or otherwise stops bot from using the current channel
-        return
-    await run_reactions(message)
-    await run_message_redaction(message) # Run last, as it may delete the message
- 

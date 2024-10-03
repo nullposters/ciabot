@@ -1,15 +1,11 @@
-import os
-import sys
-import socket
 import logging
-from dotenv import load_dotenv
-
+import os
+import socket
 from logging.handlers import SysLogHandler
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+from dotenv import load_dotenv
 
 load_dotenv()
-
 
 # Logging initialization
 class ContextFilter(logging.Filter):

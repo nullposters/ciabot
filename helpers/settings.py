@@ -1,12 +1,10 @@
-import os
-import sys
 import logging
+import os
+from typing import Any
+
 import discord
 import jsonpickle
-from typing import Any
 from dotenv import load_dotenv
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
 
 load_dotenv()
 logger = logging.getLogger(__name__)
