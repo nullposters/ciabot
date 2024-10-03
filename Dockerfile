@@ -39,8 +39,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/usr/ciabot/.venv/bin:$PATH"
 
 # Copy just the code files
+COPY ./helpers ./helpers
 COPY . ./
-RUN find . -name "*.py" -exec cp {} ./ \;
 
 # Command to run your bot
 CMD [ "python", "bot.py" ]
