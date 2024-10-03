@@ -33,7 +33,7 @@ class CiaBotClient(discord.Client):
 
 
 intents = discord.Intents.default()
-intents.guilds = True
+intents.guilds = True 
 intents.guild_messages = True
 intents.message_content = True
 client = CiaBotClient(intents=intents)

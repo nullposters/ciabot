@@ -110,3 +110,4 @@ async def on_message(message: discord.Message):
         return
     await run_reactions(message)
     await run_message_redaction(message) # Run last, as it may delete the message
+ 

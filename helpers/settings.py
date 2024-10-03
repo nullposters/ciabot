@@ -63,3 +63,4 @@ def remove_elements_from_set(interaction: discord.Interaction, config_key: str, 
     logger.info(f"Received command from {interaction.user.name} (ID: {interaction.user.id}): Removing elements {old_elements} from {config_key}")
     settings[config_key].difference_update(old_elements)
     save_settings()
+ 
