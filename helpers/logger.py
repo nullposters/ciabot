@@ -1,9 +1,12 @@
 import os
+import sys
 import socket
 import logging
 from dotenv import load_dotenv
+
 from logging.handlers import SysLogHandler
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
 
 load_dotenv()
 

@@ -1,8 +1,12 @@
 import os
+import sys
 import random
 import string
 import discord
 import logging
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+
 from bot import client
 from datetime import datetime
 from settings import settings

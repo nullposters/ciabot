@@ -1,8 +1,10 @@
 import os
+import sys
 import logging
 import discord
 from dotenv import load_dotenv
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
 
 load_dotenv()
 logger = logging.getLogger(__name__)

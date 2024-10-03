@@ -1,14 +1,17 @@
 import os
+import sys
 import logging
 import discord
 import jsonpickle
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+
 from settings import settings, save_settings, load_settings, change_config_value, add_elements_to_set, remove_elements_from_set
 from datetime import datetime
 from dotenv import load_dotenv
 from collections.abc import Callable
 from discord import app_commands
 from bot import client
-
 
 load_dotenv()
 admin_id = os.getenv('ADMIN_ID')
