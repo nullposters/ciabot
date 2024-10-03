@@ -35,18 +35,14 @@ This is a dockerized Python project that uses the Discord.py library to run the 
   - `POSTGRES_PASSWORD` for the PostgreSQL database password you plan to use.
   
   - `POSTGRES_HOST` for the PostgreSQL host, default to `db`
+  
+  - `IS_PRODUCTION` the value for if the running instance of the bot is a production environment
+
+  - `DEBUG_CHANNEL_ID` the ID of the Discord channel a non-production instance of the bot will exclusively work in
 
 - Build the docker image and run it. If you don't have any particular requirements, you can just run `source run.sh`. It will build the Docker image, tag it, prune any dangling images, run the container in detached mode with networking enabled and removal on stop, and print the container logs to your terminal in real time.
 
 - Done! You can now glow as bright as the midday sun.
-
-## Contributing
-We're happy to take contributions.  
-Fork the repository from `dev` (our current working branch) and put in a PR against `dev`, or request to be added to the ɴᴜʟʟposters organization.  
-Be sure to merge `dev` into your working branch regularly to avoid merge conflicts.  
-We use [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for our workflow practice.  
-Create a feature branch `feature/my-feature` based on `dev`, write your code, and create a pull request for `feature/my-feature` -> `dev`  
-Bug fix branches should be created in a similar fashion, `bug/big-bad-bug` -> `dev`
 
 ## ɴᴜʟʟposting
 If you've somehow managed to stumble across this bot outside our little developer community, join us on [Programmer ɴᴜʟʟposting](https://www.facebook.com/groups/programmer.nullposting), or on our [Discord server](https://discord.gg/nullclub)
