@@ -28,9 +28,24 @@ This is a dockerized Python project that uses the Discord.py library to run the 
 
   - `LOG_PORT` may be your log destination port. Optional.
 
+  - `POSTGRES_DB` for the PostgreSQL database name you plan to use. This will be packaged up by Docker in docker-compose.
+  
+  - `POSTGRES_USER` for the PostgreSQL database username you plan to use.
+  
+  - `POSTGRES_PASSWORD` for the PostgreSQL database password you plan to use.
+  
+  - `POSTGRES_HOST` for the PostgreSQL host, default to `db`
+  
+  - `IS_PRODUCTION` the value for if the running instance of the bot is a production environment
+
+  - `DEBUG_CHANNEL_ID` the ID of the Discord channel a non-production instance of the bot will exclusively work in
+
 - Build the docker image and run it. If you don't have any particular requirements, you can just run `source run.sh`. It will build the Docker image, tag it, prune any dangling images, run the container in detached mode with networking enabled and removal on stop, and print the container logs to your terminal in real time.
 
 - Done! You can now glow as bright as the midday sun.
+
+## ɴᴜʟʟposting
+If you've somehow managed to stumble across this bot outside our little developer community, join us on [Programmer ɴᴜʟʟposting](https://www.facebook.com/groups/programmer.nullposting), or on our [Discord server](https://discord.gg/nullclub)
 
 ## License
 
