@@ -11,7 +11,8 @@ from unicodedata import lookup
 
 token = os.getenv('CIABOT_SECRET', os.getenv('CIABOT_TOKEN')) # Backwards compatible with the original token name
 test_guild = discord.Object(os.getenv('CIABOT_GUILD_ID'))
-
+is_production = os.getenv('IS_PRODUCTION', "False").lower() == "true"
+debug_channel_id = int(os.getenv('DEBUG_CHANNEL_ID'))
 
 REDACTION = [
     "`[REDACTED]`",
@@ -28,6 +29,13 @@ REDACTION = [
 ]
 JSBAD = "bad"
 
+def is_bot_action_allowed_in_channel(message: discord.Message) -> bool:
+    is_channel_in_blacklist = message.channel.id in settings['channel_blacklist']
+    is_timed_out = settings['timeout_expiration'] and datetime.now().timestamp() < settings['timeout_expiration']
+    if is_channel_in_blacklist or is_timed_out:
+        return False
+
+    return True
 
 def redact_message(message: discord.Message, trigger_word_indices: list[int]) -> str:
     """Redacts a given message. If the message contains trigger words, redacts any word at random from the trigger words. Otherwise, redacts any random word from the message."""
@@ -80,7 +88,7 @@ async def run_message_redaction(message: discord.Message):
 
 async def run_reactions(message: discord.Message):
     """Reacts to messages if they meet the criteria"""
-    if "js" in message.content.lower():
+    if "http" not in message.content.lower() and "js" in message.content.lower():
         try:
             await react_with_funny_letters(message, JSBAD)
         except Exception as e:
@@ -95,6 +103,10 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if message.author.bot: # All messages sent by any bot are ignored
+        return
+    if not is_production and str(message.channel.id) != settings['debug_channel_id']: 
+        return
+    if is_bot_action_allowed_in_channel(message) == False: # determine if blacklist or otherwise stops bot from using the current channel
         return
     await run_reactions(message)
     await run_message_redaction(message) # Run last, as it may delete the message

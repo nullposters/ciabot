@@ -155,6 +155,14 @@ async def remove_trigger_words(interaction: discord.Interaction, old_trigger_wor
     message = run_if_author_is_admin(interaction, lambda: remove_elements_from_set(interaction, 'trigger_words', {word.strip() for word in old_trigger_words.split(' ')}), 'trigger_words', old_trigger_words)
     await interaction.response.send_message(message, ephemeral=True)
 
+@client.tree.command(
+    name="change-debug-channel-id",
+    description="Changes debug channel ID"
+)
+@app_commands.describe(channel_id='The channel ID to whitelist the non prod bot to')
+async def change_debug_channel_id(interaction: discord.Interaction, channel_id: str):
+    message = run_if_author_is_admin(interaction, lambda: change_config_value(interaction, 'debug_channel_id', channel_id), 'debug_channel_id')
+    await interaction.response.send_message(message, ephemeral=True)
 
 @client.tree.command(
     name="help",

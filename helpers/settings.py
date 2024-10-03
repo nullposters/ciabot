@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger(__name__)
 settings_path = os.getenv('CIABOT_SETTINGS_PATH', 'settings.json')
-
+debug_channel_id = int(os.getenv('DEBUG_CHANNEL_ID'))
 
 def save_settings() -> None:
     """Saves the current settings to the settings.json file"""
@@ -27,6 +27,7 @@ def load_settings() -> dict[str, float | set[str]]:
         'bypass_prefix': '>>',
         'channel_blacklist': set(),
         'timeout_expiration': 0,
+        'debug_channel_id': str(debug_channel_id)
     }
     if os.path.exists(settings_path):
         with open(settings_path, 'r', encoding='utf-8') as f:
