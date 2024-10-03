@@ -1,4 +1,3 @@
-
 # Contributing
 We're happy to take contributions.  
 
