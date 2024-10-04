@@ -25,7 +25,7 @@ REDACTION = [
     "`[REDACTED BY MI6]`",
     "`[REDACTED BY KGB]`",
     "`********`",
-    "`████████"
+    "`████████`"
 ]
 JSBAD = "bad"
 
@@ -94,7 +94,7 @@ async def run_reactions(message: discord.Message):
                 await react_with_funny_letters(message, JSBAD)
             except Exception as e:
                 logging.error(f"Error while reacting to message: {e}")
-        if message.author.id == 284876500480557056 and random.randint(1, 5) == 1: # pent's ID because funnee
+        if message.author.id == 284876500480557056 and random.randint(1, 50) == 1: # pent's ID because funnee
             try:
                 await react_with_funny_letters(message, "lib")
             except Exception as e:
