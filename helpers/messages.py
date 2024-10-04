@@ -88,8 +88,14 @@ async def run_message_redaction(message: discord.Message):
 
 async def run_reactions(message: discord.Message):
     """Reacts to messages if they meet the criteria"""
-    if "http" not in message.content.lower() and "js" in message.content.lower():
-        try:
-            await react_with_funny_letters(message, JSBAD)
-        except Exception as e:
-            logging.error(f"Error while reacting to message: {e}")
+    if "http" not in message.content.lower():
+        if "js" in message.content.lower():
+            try:
+                await react_with_funny_letters(message, JSBAD)
+            except Exception as e:
+                logging.error(f"Error while reacting to message: {e}")
+        if message.author.id == 284876500480557056 and random.randint(1, 5) == 1: # pent's ID because funnee
+            try:
+                await react_with_funny_letters(message, "lib")
+            except Exception as e:
+                logging.error(f"Error while reacting to message: {e}")
