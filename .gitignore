@@ -696,3 +696,5 @@ dist
 
 # Macos filler
 **/.DS_Store
+/CIA.Net.Public.Bot/appsettings.dev.json
+/CIA.Net.Public.Bot/appsettings.adhoc.json
