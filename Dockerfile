@@ -1,46 +1,37 @@
-# Use an official Python runtime as a builder image
-FROM python:3.11-slim AS builder
+# Base image with .NET runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
 
-# Install libpq and gcc to compile psycopg2
-RUN apt update && \
-    apt install -y libpq-dev gcc && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip install virtualenv && \
-    virtualenv /usr/ciabot/.venv/
+# Build stage with SDK
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
 
-# Activate the virtual environment
-ENV PATH="/usr/ciabot/.venv/bin:$PATH"
+# Copy the project files and restore dependencies
+COPY ["CIA.Net.Public.Bot/CIA.Net.Public.Bot.csproj", "CIA.Net.Public.Bot/"]
+RUN dotnet restore "./CIA.Net.Public.Bot/CIA.Net.Public.Bot.csproj"
 
-# Copy the requirements.txt file
-COPY requirements.txt ./
+# Copy the entire source code and build the application
+COPY . .
+WORKDIR "/src/CIA.Net.Public.Bot"
+RUN dotnet build "./CIA.Net.Public.Bot.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Publish the application
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./CIA.Net.Public.Bot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Final runtime image with published app
+FROM base AS final
+WORKDIR /app
 
-# Install libpq to run psycopg2
-RUN apt update && \
-    apt install -y libpq5 && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+# Copy the appsettings.json to the final image
+COPY CIA.Net.Public.Bot/appsettings.json ./ 
 
-# Copy the virtual environment from the previous image
-COPY --from=builder /usr/ciabot/.venv /usr/ciabot/.venv
+# Copy the published output from the publish step
+COPY --from=publish /app/publish .
 
-# Set the working directory in the container
-WORKDIR /usr/ciabot/
+# Set user to app for running the application
+USER app
 
-# Don't write .pyc files, don't buffer output, and activate the virtual environment
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/usr/ciabot/.venv/bin:$PATH"
-
-# Copy just the code files
-COPY ./helpers ./helpers
-COPY . ./
-
-# Command to run your bot
-CMD [ "python", "bot.py" ]
+ENTRYPOINT ["dotnet", "CIA.Net.Public.Bot.dll"]
