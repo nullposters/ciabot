@@ -93,7 +93,15 @@ jobs:
           echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> $GITHUB_ENV
         fi
-        
+
+    - name: Replace appsettings.json
+      run: |
+        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+          echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
+        else
+          echo "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
+        fi
+
     - name: Create Docker Network if not exists
       run: |
         if ! docker network ls --format '{{.Name}}' | grep -w "${CIABOT_NETWORK_NAME}"; then
