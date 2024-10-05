@@ -194,7 +194,7 @@ namespace CIA.Net.Public.Bot
         }
 
         [SlashCommand("change-debug-channel-id", "Changes debug channel ID")]
-        public async Task ChangeDebugChannelId([Summary("channel_id", "The new debug channel ID")] string channelId)
+        public async Task ChangeDebugChannelId([Summary("channel_id", "The new debug channel ID")] long channelId)
         {
             var result = await RunIfAuthorIsAdmin(Context.User as SocketGuildUser, () => {
                 _settingsManager.ChangeConfigValue("DebugChannelId", channelId);
