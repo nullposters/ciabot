@@ -26,7 +26,7 @@ FROM base AS final
 WORKDIR /app
 
 # Copy the appsettings.json to the final image
-COPY CIA.Net.Public.Bot/appsettings.json ./ 
+COPY CIA.Net.Public.Bot/appsettings.json /app/appsettings.json
 
 # Copy the published output from the publish step
 COPY --from=publish /app/publish .
