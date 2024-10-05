@@ -1,7 +1,7 @@
 ﻿
 namespace CIA.Net.Public.Bot.Configuration
 {
-    public class BotConfiguration
+    public class BotConfigurationOptions
     {
         public static string SettingsName => "BotConfiguration";
         public double RedactionChance { get; set; } = 0.08;

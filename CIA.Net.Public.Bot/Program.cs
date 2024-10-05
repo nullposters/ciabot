@@ -2,6 +2,7 @@
 using CIA.Net.Public.Bot.Configuration;
 using CIA.Net.Public.Bot.Extensions;
 using CIA.Net.Public.Bot.Handlers;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore.Diagnostics.Internal;
@@ -25,36 +26,7 @@ namespace CIA.Net.Public
                 {
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
                 })
-                .ConfigureServices((context, services) =>
-                {
-                    services.Configure<BotConfiguration>(context.Configuration.GetSection(BotConfiguration.SettingsName));
-                    services.Configure<PaperTrailLoggingOptions>(context.Configuration.GetSection(PaperTrailLoggingOptions.SettingsName));
-                    services.Configure<CIABotOptions>(context.Configuration.GetSection(CIABotOptions.SettingsName));
-                    services.AddSingleton<SettingsManager>();
-                    services.AddSingleton<DiscordSocketClient>();
-                    services.AddSingleton(sp =>
-                    {
-                        var client = sp.GetRequiredService<DiscordSocketClient>();
-                        return new InteractionService(client);
-                    });
-                    services.AddSingleton<CommandHandler>();
-                    services.AddSingleton<CIABotClient>();
-                    services.AddSingleton<ILoggerProvider>(sp =>
-                    {
-                        var options = sp.GetRequiredService<IOptions<PaperTrailLoggingOptions>>().Value;
-
-                        var logger = new LoggerConfiguration()
-                            .WriteTo.Console()
-                            .WriteTo.Syslog(options.Destination, options.Port, System.Net.Sockets.ProtocolType.Tcp)
-                            .Enrich.WithProperty("hostname", Environment.MachineName)
-                            .CreateLogger();
-
-                        Log.Logger = logger;
-                        return new Serilog.Extensions.Logging.SerilogLoggerProvider(logger);
-                    });
-
-                    services.AddLogging();
-                });
+                .ConfigureServices((context, services) => services.AddAndConfigureBotServices(context.Configuration));
 
             var host = hostBuilder.Build();
 

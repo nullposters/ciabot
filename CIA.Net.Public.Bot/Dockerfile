@@ -9,10 +9,7 @@ WORKDIR /src
 
 # Copy the project files and restore dependencies
 COPY ["CIA.Net.Public.Bot/CIA.Net.Public.Bot.csproj", "CIA.Net.Public.Bot/"]
-COPY ["CIA.Net.Public.Data/CIA.Net.Public.Data.csproj", "CIA.Net.Public.Data/"]
-COPY ["CIA.Net.Public.Domain/CIA.Net.Public.Domain.csproj", "CIA.Net.Public.Domain/"]
-COPY ["CIA.Net.Public.Common/CIA.Net.Public.Common.csproj", "CIA.Net.Public.Common/"]
-COPY ["CIA.Net.Public.Test/CIA.Net.Public.Test.csproj", "CIA.Net.Public.Test/"]
+
 
 # Restore the project
 RUN dotnet restore "./CIA.Net.Public.Bot/CIA.Net.Public.Bot.csproj"

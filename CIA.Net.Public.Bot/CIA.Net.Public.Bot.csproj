@@ -28,9 +28,4 @@
     <PackageReference Include="Serilog.Sinks.Syslog" Version="0.2.0" />
   </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\CIA.Net.Public.Data\CIA.Net.Public.Data.csproj" />
-		<ProjectReference Include="..\CIA.Net.Public.Domain\CIA.Net.Public.Domain.csproj" />
-	</ItemGroup>
-
 </Project>
