@@ -32,7 +32,9 @@ jobs:
 
     - name: Set environment variables
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+        branch="${{ github.event.inputs.branch || github.ref_name }}"
+        
+        if [ "$branch" = "dev" ]; then
           # CIABotOptions section
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_DEV }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
@@ -42,7 +44,7 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}" >> .env
           echo "CIABOT_SETTINGS_PATH=${{ secrets.CIABOT_SETTINGS_PATH }}" >> .env
           echo "POSTGRES_HOST=db" >> .env
-          echo "IS_PRODUCTION=true" >> .env
+          echo "IS_PRODUCTION=false" >> .env
           echo "DEBUG_CHANNEL_ID=1288950494911402024" >> .env
 
           # PaperTrailLogging section
@@ -56,14 +58,14 @@ jobs:
           echo "CIABOT_PORT=81" >> .env
           echo "DEPLOY_PATH=/root/ciabot-public" >> .env
           echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
-          echo "COMPOSE_FILE=docker-compose.yml" >> .env
+          echo "COMPOSE_FILE=docker-compose.dev.yml" >> .env
 
           # Set environment variables for GitHub Actions
           echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
           echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.dev.yml" >> $GITHUB_ENV
         else
-          # CIABotOptions section
+          # CIABotOptions section for adhoc deployments
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_ADHOC }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
           echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
@@ -86,7 +88,7 @@ jobs:
           echo "CIABOT_PORT=81" >> .env
           echo "DEPLOY_PATH=/root/ciabot-public" >> .env
           echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
-          echo "COMPOSE_FILE=docker-compose.yml" >> .env
+          echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> .env
 
           # Set environment variables for GitHub Actions
           echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
@@ -96,7 +98,7 @@ jobs:
 
     - name: Replace appsettings.json
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+        if [ "$branch" = "dev" ]; then
           echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
         else
           echo "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
@@ -124,7 +126,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         "docker compose -f ${{ env.COMPOSE_FILE }} down || true"
         
-        scp -o StrictHostKeyChecking=no -r * .env ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ env.DEPLOY_PATH }}
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ env.DEPLOY_PATH }}
         
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         "cd ${{ env.DEPLOY_PATH }} && docker compose --env-file .env -f ${{ env.COMPOSE_FILE }} up -d --build"
