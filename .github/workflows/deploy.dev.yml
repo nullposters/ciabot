@@ -101,11 +101,11 @@ jobs:
       run: |
         branch="${{ github.event.inputs.branch || github.ref_name }}"
         echo "Branch is $branch"
-
+        
         if [ "$branch" = "dev" ]; then
-          echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
+          printf '%s\n' "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
         else
-          echo "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
+          printf '%s\n' "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
         fi
 
     - name: Create Docker Network if not exists
