@@ -53,17 +53,17 @@ jobs:
           echo "PAPERTRAIL_LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_DEV }}" >> .env
 
           # Additional environment variables for Docker Compose setup
-          echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
-          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
+          echo "CIABOT_CONTAINER_NAME=ciabot_public_dev" >> .env
+          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_dev" >> .env
           echo "CIABOT_NETWORK_PORT=5432" >> .env
           echo "CIABOT_PORT=81" >> .env
-          echo "DEPLOY_PATH=/root/ciabot-public" >> .env
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
+          echo "DEPLOY_PATH=/root/ciabot-public-dev" >> .env
+          echo "CIABOT_NETWORK_NAME=ciabot_network_dev" >> .env
           echo "COMPOSE_FILE=docker-compose.dev.yml" >> .env
 
           # Set environment variables for GitHub Actions
-          echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=/root/ciabot-public-dev" >> $GITHUB_ENV
+          echo "CIABOT_NETWORK_NAME=ciabot_network_dev" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.dev.yml" >> $GITHUB_ENV
         else
           # CIABotOptions section for adhoc deployments
@@ -83,17 +83,17 @@ jobs:
           echo "PAPERTRAIL_LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_ADHOC }}" >> .env
 
           # Additional environment variables for Docker Compose setup
-          echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
-          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
+          echo "CIABOT_CONTAINER_NAME=ciabot_public_adhoc" >> .env
+          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_adhoc" >> .env
           echo "CIABOT_NETWORK_PORT=5432" >> .env
           echo "CIABOT_PORT=81" >> .env
-          echo "DEPLOY_PATH=/root/ciabot-public" >> .env
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
+          echo "DEPLOY_PATH=/root/ciabot-public-adhoc" >> .env
+          echo "CIABOT_NETWORK_NAME=ciabot_network_adhoc" >> .env
           echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> .env
 
           # Set environment variables for GitHub Actions
-          echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=/root/ciabot-public-adhoc" >> $GITHUB_ENV
+          echo "CIABOT_NETWORK_NAME=ciabot_network_adhoc" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> $GITHUB_ENV
         fi
 
