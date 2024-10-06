@@ -33,6 +33,7 @@ jobs:
     - name: Set environment variables
       run: |
         branch="${{ github.event.inputs.branch || github.ref_name }}"
+        echo "Branch is $branch"
 
         if [ "$branch" = "dev" ]; then
           # CIABotOptions section
@@ -99,6 +100,7 @@ jobs:
     - name: Replace appsettings.json
       run: |
         branch="${{ github.event.inputs.branch || github.ref_name }}"
+        echo "Branch is $branch"
 
         if [ "$branch" = "dev" ]; then
           echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
