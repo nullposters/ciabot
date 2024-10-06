@@ -32,7 +32,9 @@ jobs:
 
     - name: Set environment variables
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+        branch="${{ github.event.inputs.branch || github.ref_name }}"
+
+        if [ "$branch" = "dev" ]; then
           # CIABotOptions section
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_DEV }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
@@ -96,7 +98,9 @@ jobs:
 
     - name: Replace appsettings.json
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+        branch="${{ github.event.inputs.branch || github.ref_name }}"
+
+        if [ "$branch" = "dev" ]; then
           echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
         else
           echo "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
