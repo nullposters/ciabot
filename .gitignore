@@ -42,3 +42,5 @@ build/
 # IDE files
 .vscode/
 .idea/
+
+**/settings.json
