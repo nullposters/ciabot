@@ -32,7 +32,10 @@ jobs:
 
     - name: Set environment variables
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
+        branch="${{ github.event.inputs.branch || github.ref_name }}"
+        echo "Branch is $branch"
+
+        if [ "$branch" = "dev" ]; then
           # CIABotOptions section
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_DEV }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
@@ -42,7 +45,7 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}" >> .env
           echo "CIABOT_SETTINGS_PATH=${{ secrets.CIABOT_SETTINGS_PATH }}" >> .env
           echo "POSTGRES_HOST=db" >> .env
-          echo "IS_PRODUCTION=true" >> .env
+          echo "IS_PRODUCTION=false" >> .env
           echo "DEBUG_CHANNEL_ID=1288950494911402024" >> .env
 
           # PaperTrailLogging section
@@ -50,20 +53,20 @@ jobs:
           echo "PAPERTRAIL_LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_DEV }}" >> .env
 
           # Additional environment variables for Docker Compose setup
-          echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
-          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
+          echo "CIABOT_CONTAINER_NAME=ciabot_public_dev" >> .env
+          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_dev" >> .env
           echo "CIABOT_NETWORK_PORT=5432" >> .env
           echo "CIABOT_PORT=81" >> .env
-          echo "DEPLOY_PATH=/root/ciabot-public" >> .env
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
-          echo "COMPOSE_FILE=docker-compose.yml" >> .env
+          echo "DEPLOY_PATH=/root/ciabot-public-dev" >> .env
+          echo "CIABOT_NETWORK_NAME=ciabot_network_dev" >> .env
+          echo "COMPOSE_FILE=docker-compose.dev.yml" >> .env
 
           # Set environment variables for GitHub Actions
-          echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=/root/ciabot-public-dev" >> $GITHUB_ENV
+          echo "CIABOT_NETWORK_NAME=ciabot_network_dev" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.dev.yml" >> $GITHUB_ENV
         else
-          # CIABotOptions section
+          # CIABotOptions section for adhoc deployments
           echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_ADHOC }}" >> .env
           echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
           echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
@@ -80,26 +83,31 @@ jobs:
           echo "PAPERTRAIL_LOG_PORT=${{ secrets.PAPERTRAIL_LOG_PORT_ADHOC }}" >> .env
 
           # Additional environment variables for Docker Compose setup
-          echo "CIABOT_CONTAINER_NAME=ciabot_public" >> .env
-          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres" >> .env
+          echo "CIABOT_CONTAINER_NAME=ciabot_public_adhoc" >> .env
+          echo "POSTGRES_CONTAINER_NAME=ciabot_postgres_adhoc" >> .env
           echo "CIABOT_NETWORK_PORT=5432" >> .env
           echo "CIABOT_PORT=81" >> .env
-          echo "DEPLOY_PATH=/root/ciabot-public" >> .env
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> .env
-          echo "COMPOSE_FILE=docker-compose.yml" >> .env
+          echo "DEPLOY_PATH=/root/ciabot-public-adhoc" >> .env
+          echo "CIABOT_NETWORK_NAME=ciabot_network_adhoc" >> .env
+          echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> .env
 
           # Set environment variables for GitHub Actions
-          echo "DEPLOY_PATH=/root/ciabot-public" >> $GITHUB_ENV
-          echo "CIABOT_NETWORK_NAME=ciabot_network" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=/root/ciabot-public-adhoc" >> $GITHUB_ENV
+          echo "CIABOT_NETWORK_NAME=ciabot_network_adhoc" >> $GITHUB_ENV
           echo "COMPOSE_FILE=docker-compose.adhoc.yml" >> $GITHUB_ENV
         fi
 
     - name: Replace appsettings.json
       run: |
-        if [ "${{ github.event.inputs.branch || github.ref_name }}" == "dev" ]; then
-          echo "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
+        branch="${{ github.event.inputs.branch || github.ref_name }}"
+        echo "Branch is $branch"
+        
+        if [ "$branch" = "dev" ]; then
+          sed -i 's/__CIABOT_TOKEN__/${{ secrets.CIABOT_TOKEN_DEV }}/g' CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__POSTGRES_PASSWORD__/${{ secrets.DEV_POSTGRES_PASSWORD }}/g' CIA.Net.Public.Bot/appsettings.json
         else
-          echo "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__CIABOT_TOKEN__/${{ secrets.CIABOT_TOKEN_ADHOC }}/g' CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__POSTGRES_PASSWORD__/${{ secrets.ADHOC_POSTGRES_PASSWORD }}/g' CIA.Net.Public.Bot/appsettings.json
         fi
 
     - name: Create Docker Network if not exists
@@ -124,7 +132,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         "docker compose -f ${{ env.COMPOSE_FILE }} down || true"
         
-        scp -o StrictHostKeyChecking=no -r * .env ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ env.DEPLOY_PATH }}
+        scp -o StrictHostKeyChecking=no -r * ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ env.DEPLOY_PATH }}
         
         ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
         "cd ${{ env.DEPLOY_PATH }} && docker compose --env-file .env -f ${{ env.COMPOSE_FILE }} up -d --build"

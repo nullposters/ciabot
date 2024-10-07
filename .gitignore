@@ -698,3 +698,4 @@ dist
 **/.DS_Store
 /CIA.Net.Public.Bot/appsettings.dev.json
 /CIA.Net.Public.Bot/appsettings.adhoc.json
+/CIA.Net.Public.Bot/appsettings.local.json
