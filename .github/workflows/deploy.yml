@@ -26,7 +26,7 @@ jobs:
     - name: Set environment variables
       run: |
         # CIABotOptions section
-        echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN }}" >> .env
+        echo "CIABOT_TOKEN=${{ secrets.CIABOT_TOKEN_PROD }}" >> .env
         echo "CIABOT_SETTINGS_PATH=${{ secrets.CIABOT_SETTINGS_PATH }}" >> .env
         echo "CIABOT_ADMIN_ID=${{ secrets.CIABOT_ADMIN_ID }}" >> .env
         echo "CIABOT_GUILD_ID=${{ secrets.CIABOT_GUILD_ID }}" >> .env
@@ -57,7 +57,8 @@ jobs:
 
     - name: Replace appsettings.json
       run: |
-        echo "${{ secrets.APP_SETTINGS_PROD }}" > CIA.Net.Public.Bot/appsettings.json
+        sed -i 's/__CIABOT_TOKEN__/${{ secrets.CIABOT_TOKEN_PROD }}/g' CIA.Net.Public.Bot/appsettings.json
+        sed -i 's/__POSTGRES_PASSWORD__/${{ secrets.POSTGRES_PASSWORD_PROD }}/g' CIA.Net.Public.Bot/appsettings.json
 
     - name: Create Docker Network if not exists
       run: |
