@@ -103,9 +103,11 @@ jobs:
         echo "Branch is $branch"
         
         if [ "$branch" = "dev" ]; then
-          printf '%s\n' "${{ secrets.APP_SETTINGS_DEV }}" > CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__CIABOT_TOKEN__/${{ secrets.CIABOT_TOKEN_DEV }}/g' CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__POSTGRES_PASSWORD__/${{ secrets.DEV_POSTGRES_PASSWORD }}/g' CIA.Net.Public.Bot/appsettings.json
         else
-          printf '%s\n' "${{ secrets.APP_SETTINGS_ADHOC }}" > CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__CIABOT_TOKEN__/${{ secrets.CIABOT_TOKEN_ADHOC }}/g' CIA.Net.Public.Bot/appsettings.json
+          sed -i 's/__POSTGRES_PASSWORD__/${{ secrets.ADHOC_POSTGRES_PASSWORD }}/g' CIA.Net.Public.Bot/appsettings.json
         fi
 
     - name: Create Docker Network if not exists
