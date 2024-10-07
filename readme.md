@@ -44,11 +44,13 @@ This is a dockerized TypeScript project that uses the discord.js and discordx li
 
   - `DD_APIKEY` must be your datadog api key
 
-  - `DD_HOSTNAME` required value, recommended that you set this to the bot's image name
+  - `DD_HOSTNAME` optional value, can be the machine/server hostname, recommended that you set this to the bot's image name
 
-  - `DD_SERVICE` required value, set it to something like `discord-ciabot`
+  - `DD_SERVICE` optional value, name of the application/service generating the logs
 
-  - `DD_TAGS` must be at least on kv pair, recommened that it's set to the environment the bot is being deployed in (e.g. `environment:sandbox`)
+  - `DD_TAGS` optional value, a list of comma separated kv pairs. (eg: `foo:bar,boo:baz`)
+
+  - `DD_REGION` optional value, the Datadog log intake region that should be used. Defaults to `US`, set to `EU` to force all logs to be sent to the EU specific intake region.
 
 - Build the docker image and run it. If you don't have any particular requirements, you can just run `source run.sh`. It will build the Docker image, tag it, prune any dangling images, run the container in detached mode with networking enabled and removal on stop, and print the container logs to your terminal in real time.
 

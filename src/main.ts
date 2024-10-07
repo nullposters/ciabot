@@ -14,6 +14,7 @@ export abstract class Main {
 
     static preflight() {
         Config.loadEnv();
+        Config.loadSettings();
         if (Config.logDestination === "datadog") {
             Config.datadogLogTrail();
         }

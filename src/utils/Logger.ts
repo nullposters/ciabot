@@ -48,8 +48,9 @@ export abstract class Logger {
                 apiKey: Config.ddApiKey,
                 hostname: Config.ddHostname,
                 service: Config.ddService,
-                ddsource: Config.ddSource,
-                ddtags: Config.ddTags
+                ddsource: "nodejs",
+                ddtags: Config.ddTags,
+                intakeRegion: Config.ddRegion
             })
         )
     }
