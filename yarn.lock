@@ -1197,6 +1197,13 @@
   resolved "https://registry.yarnpkg.com/@discordx/internal/-/internal-1.1.4.tgz#1f0789739828048b2a001108fc013dc200607048"
   integrity sha512-DQDRntfLrC2UM0jxFohxTsVD3IT7/EOES+PGlRavt6Nzn+v7m2iD1dU2rywbtXyOrE5jWJX+OqCbYyr+uZnx1w==
 
+"@discordx/pagination@^3.5.5":
+  version "3.5.5"
+  resolved "https://registry.yarnpkg.com/@discordx/pagination/-/pagination-3.5.5.tgz#07fbbdad61fc9bcf6769b41205f5a6710c595132"
+  integrity sha512-ozxzjgqHbDevfhxcs5UQ8HrqzFuh8U6XZJ6UjZupDgTK2c+r0KiaCGHMIEWCBRUIQtL1DzwdefNCs9DUBm6BDw==
+  dependencies:
+    lodash "^4.17.21"
+
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@isaacs/cliui/-/cliui-8.0.2.tgz#b37667b7bc181c168782259bab42474fbf52b550"

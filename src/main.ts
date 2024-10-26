@@ -1,6 +1,6 @@
-import Config from "@src/core/Config";
+import Config from "@src/utils/Config";
 import { Client } from "discordx";
-import { importx } from "@discordx/importer";
+import { isESM, dirname, importx } from "@discordx/importer";
 import { ChannelType, IntentsBitField, Partials, Activity, ActivityType } from "discord.js";
 
 const logger = require("@src/utils/Logger").Logger.logger
@@ -13,6 +13,7 @@ export abstract class Main {
     }
 
     static preflight() {
+        logger.debug(`isESM: ${isESM}`)
         Config.loadEnv();
         Config.loadSettings();
         if (Config.logDestination === "datadog") {
@@ -38,11 +39,11 @@ export abstract class Main {
             logger.info(`Loggied in as ${this._client.user?.tag}}`)
         }) 
 
-        this._client.on("interactionCreate", (interaction) => {
-            this._client.executeInteraction(interaction)
+        this._client.on("interactionCreate", async (interaction) => {
+            await this._client.executeInteraction(interaction)
         })
 
-        await importx(`${__dirname}/commands/**/*.{js, ts}`);
+        await importx(`${__dirname}/commands/**/*.{js,ts}`);
         await this._client.login(Config.botToken).then(r => Promise);
     }
 }

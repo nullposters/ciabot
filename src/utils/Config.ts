@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { forceExit, ConfigError } from "@src/core/Error"
+import { forceExit, ConfigError } from "@src/utils/Error"
 import { Logger } from "@src/utils/Logger"
 
 require('dotenv').config()
@@ -13,6 +13,9 @@ export default abstract class Config {
     static botGuildID: string;
     static botSettingsPath: string;
     static botSettings: object;
+    static botBypassChar: string;
+    static botTriggerWords: string[];
+    static botRedactChance: number;
 
     static logDestination: string;
     

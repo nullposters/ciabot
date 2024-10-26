@@ -3,7 +3,7 @@ const { createLogger, format, transports } = winston;
 const { combine, printf, colorize, prettyPrint } = format;
 const DatadogWinston = require('datadog-winston');
 
-import Config from "@src/core/Config";
+import Config from "@src/utils/Config";
 import moment from "moment";
 
 export abstract class Logger {

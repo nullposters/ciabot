@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2017",
+    "module": "ESNext",
+    "target": "ESNext",
     "moduleResolution": "node",
     "allowJs": false,
     "noEmit": true,
@@ -12,6 +12,7 @@
     "importHelpers": true,
     "resolveJsonModule": true,
     "noImplicitAny": true,
+    "allowImportingTsExtensions": true,
     "sourceMap": true,
     "lib": [
       "es2020",
